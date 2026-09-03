@@ -2,7 +2,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.pinax.desktop",
-  "copyright": "Copyright © ${author} ${year}",
+  "copyright": "Copyright © 2026 ${author}",
   "asar": true,
   "productName": "pinax",
   "executableName": "pinax",
@@ -39,7 +39,7 @@
     ],
     "artifactName": "${productName}-Mac-${version}-${arch}.${ext}",
     "extendInfo": {
-      "NSHumanReadableCopyright": "Copyright © ${author} ${year}",
+      "NSHumanReadableCopyright": "Copyright © 2026 ${author}",
       "LSApplicationCategoryType": "public.app-category.education",
       "CFBundleDocumentTypes": []
     }
