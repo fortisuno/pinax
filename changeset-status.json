@@ -1,0 +1,38 @@
+{
+  "changesets": [
+    {
+      "releases": [
+        {
+          "name": "@pinax/desktop",
+          "type": "minor"
+        },
+        {
+          "name": "@pinax/landing",
+          "type": "minor"
+        }
+      ],
+      "summary": "Release first version",
+      "id": "strict-bars-admire"
+    }
+  ],
+  "releases": [
+    {
+      "name": "@pinax/desktop",
+      "type": "minor",
+      "oldVersion": "0.0.0",
+      "changesets": [
+        "strict-bars-admire"
+      ],
+      "newVersion": "0.1.0"
+    },
+    {
+      "name": "@pinax/landing",
+      "type": "minor",
+      "oldVersion": "0.0.0",
+      "changesets": [
+        "strict-bars-admire"
+      ],
+      "newVersion": "0.1.0"
+    }
+  ]
+}
