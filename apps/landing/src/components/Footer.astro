@@ -1,0 +1,52 @@
+---
+const repoHref = "https://github.com/fortisuno/pinax-desktop";
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-border px-6 py-10 md:px-12 lg:px-16">
+  <div class="mx-auto flex max-w-5xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div class="flex items-center gap-3 pinax-sans text-[0.82rem] text-muted-foreground">
+      <span>© {year} Pinax Desktop.</span>
+      <span aria-hidden="true">·</span>
+      <span>Hecho para aulas de primaria.</span>
+    </div>
+    <ul class="flex flex-wrap items-center gap-x-6 gap-y-2 pinax-sans text-[0.82rem]">
+      <li>
+        <a
+          href={repoHref}
+          class="text-muted-foreground hover:text-foreground transition-colors"
+          target="_blank"
+          rel="noopener"
+          >Repositorio</a
+        >
+      </li>
+      <li>
+        <a
+          href={`${repoHref}/issues`}
+          class="text-muted-foreground hover:text-foreground transition-colors"
+          target="_blank"
+          rel="noopener"
+          >Informar de un problema</a
+        >
+      </li>
+      <li>
+        <a
+          href={`${repoHref}/blob/main/LICENSE`}
+          class="text-muted-foreground hover:text-foreground transition-colors"
+          target="_blank"
+          rel="noopener"
+          >Licencia</a
+        >
+      </li>
+      <li>
+        <a
+          href={`${repoHref}/blob/main/apps/desktop/PRODUCT.md`}
+          class="text-muted-foreground hover:text-foreground transition-colors"
+          target="_blank"
+          rel="noopener"
+          >PRODUCT.md</a
+        >
+      </li>
+    </ul>
+  </div>
+</footer>

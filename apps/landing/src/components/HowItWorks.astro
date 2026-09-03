@@ -1,0 +1,196 @@
+---
+// The rubric mechanism — the memorable moment of the landing.
+// Authored SVG: no raster, no foreign text in plate. Four columns join by
+// weighted-sum arrows into a final grade. Lives on the page's own paper.
+---
+
+<section
+  id="como-funciona"
+  aria-labelledby="how-title"
+  class="px-6 py-20 md:px-12 md:py-28 lg:px-16"
+>
+  <div class="mx-auto max-w-5xl">
+    <div class="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-10">
+      <header class="md:col-span-5">
+        <h2
+          id="how-title"
+          class="pinax-display text-[1.9rem] md:text-[2.4rem] leading-[1.1] text-foreground"
+        >
+          Una rúbrica que se parece a la tuya, no a una hoja de cálculo.
+        </h2>
+        <p class="mt-5 text-[1rem] leading-[1.6] text-muted-foreground">
+          Defines cuántas tareas tiene el periodo, su peso en la nota final y
+          los criterios adicionales que ponderas aparte — participación,
+          lectura oral, cuaderno al día. Pinax hace el cálculo. Tú decides las
+          reglas.
+        </p>
+        <p class="mt-4 text-[1rem] leading-[1.6] text-muted-foreground">
+          El resultado es una sola nota explicable: cada componente aparece
+          con su valor, su peso y su contribución, línea por línea.
+        </p>
+      </header>
+
+      <figure
+        class="md:col-span-7"
+        role="img"
+        aria-label="Diagrama de la rúbrica ponderada: tres tareas y un criterio adicional se combinan según sus pesos en una sola nota final."
+      >
+        <div
+          class="rounded-xl border border-border bg-card p-5 md:p-7 lg:p-9 shadow-sm"
+        >
+          <svg
+            viewBox="0 0 600 360"
+            xmlns="http://www.w3.org/2000/svg"
+            class="block h-auto w-full"
+            role="presentation"
+          >
+            {/* rules */}
+            <g
+              stroke="var(--border)"
+              stroke-width="0.6"
+              stroke-linecap="round"
+            >
+              <line x1="0" y1="60" x2="600" y2="60" />
+              <line x1="0" y1="180" x2="600" y2="180" />
+              <line x1="0" y1="300" x2="600" y2="300" />
+            </g>
+
+            {/* column labels */}
+            <g
+              fill="var(--muted-foreground)"
+              font-family="IBM Plex Sans, system-ui, sans-serif"
+              font-size="11"
+              letter-spacing="2"
+            >
+              <text x="20" y="34" text-transform="uppercase">Tareas</text>
+              <text x="240" y="34" text-transform="uppercase">Peso</text>
+              <text x="360" y="34" text-transform="uppercase">Criterios</text>
+              <text x="500" y="34" text-transform="uppercase">Nota</text>
+            </g>
+
+            {/* tareas — three boxes */}
+            <g
+              fill="none"
+              stroke="var(--border)"
+              stroke-width="1.4"
+              font-family="Source Serif 4, Georgia, serif"
+              font-size="22"
+            >
+              <g>
+                <rect x="20" y="78" width="180" height="44" rx="3" />
+                <text x="36" y="107" fill="var(--foreground)">Tarea 1</text>
+                <text x="180" y="107" fill="var(--foreground)" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="14">8,5</text>
+              </g>
+              <g>
+                <rect x="20" y="142" width="180" height="44" rx="3" />
+                <text x="36" y="171" fill="var(--foreground)">Tarea 2</text>
+                <text x="180" y="171" fill="var(--foreground)" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="14">9,0</text>
+              </g>
+              <g>
+                <rect x="20" y="206" width="180" height="44" rx="3" />
+                <text x="36" y="235" fill="var(--foreground)">Tarea 3</text>
+                <text x="180" y="235" fill="var(--foreground)" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="14">7,5</text>
+              </g>
+            </g>
+
+            {/* tasks average */}
+            <g
+              font-family="Source Serif 4, Georgia, serif"
+              fill="var(--foreground)"
+            >
+              <rect x="20" y="270" width="180" height="40" rx="3" fill="none" stroke="var(--border)" stroke-width="1.4" />
+              <text x="36" y="296" font-size="15">Promedio tareas</text>
+              <text x="180" y="296" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="16" font-weight="500">8,33</text>
+            </g>
+
+            {/* peso column */}
+            <g
+              fill="var(--foreground)"
+              font-family="Source Serif 4, Georgia, serif"
+              font-size="20"
+            >
+              <rect x="240" y="78" width="100" height="172" rx="3" fill="none" stroke="var(--border)" stroke-width="1.4" />
+              <text x="290" y="120" text-anchor="middle">70 %</text>
+              <text x="290" y="160" text-anchor="middle" font-size="11" font-family="IBM Plex Sans, system-ui, sans-serif" fill="var(--muted-foreground)" letter-spacing="2" text-transform="uppercase">del total</text>
+
+              <rect x="240" y="270" width="100" height="40" rx="3" fill="none" stroke="var(--border)" stroke-width="1.4" />
+              <text x="290" y="296" text-anchor="middle" font-size="16">× 0,7</text>
+            </g>
+
+            {/* criterios adicionales */}
+            <g
+              fill="var(--foreground)"
+              font-family="Source Serif 4, Georgia, serif"
+              font-size="15"
+            >
+              <rect x="360" y="78" width="130" height="60" rx="3" fill="none" stroke="var(--border)" stroke-width="1.4" />
+              <text x="376" y="106" font-size="15">Cuaderno</text>
+              <text x="476" y="106" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="14">9,0</text>
+
+              <rect x="360" y="148" width="130" height="60" rx="3" fill="none" stroke="var(--border)" stroke-width="1.4" />
+              <text x="376" y="176" font-size="15">Lectura</text>
+              <text x="476" y="176" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="14">8,0</text>
+
+              <rect x="360" y="218" width="130" height="32" rx="3" fill="none" stroke="var(--border)" stroke-width="1.4" />
+              <text x="425" y="240" text-anchor="middle" font-size="12" fill="var(--muted-foreground)" font-family="IBM Plex Sans, system-ui, sans-serif" letter-spacing="2" text-transform="uppercase">+ 2 más</text>
+            </g>
+
+            {/* criterios: 30% del total */}
+            <g
+              font-family="Source Serif 4, Georgia, serif"
+              fill="var(--foreground)"
+            >
+              <rect x="360" y="270" width="130" height="40" rx="3" fill="none" stroke="var(--border)" stroke-width="1.4" />
+              <text x="425" y="296" text-anchor="middle" font-size="16">× 0,3</text>
+            </g>
+
+            {/* final nota — primary accent */}
+            <g>
+              <rect x="510" y="78" width="70" height="232" rx="3" fill="var(--primary)" />
+              <text
+                x="545"
+                y="200"
+                text-anchor="middle"
+                fill="var(--primary-foreground)"
+                font-family="Source Serif 4, Georgia, serif"
+                font-size="56"
+                font-weight="500"
+                letter-spacing="-2"
+              >8,4</text>
+              <text
+                x="545"
+                y="232"
+                text-anchor="middle"
+                fill="var(--primary-foreground)"
+                opacity="0.85"
+                font-family="IBM Plex Sans, system-ui, sans-serif"
+                font-size="11"
+                letter-spacing="2"
+                text-transform="uppercase"
+              >final</text>
+            </g>
+
+            {/* arrows */}
+            <g
+              fill="none"
+              stroke="var(--muted-foreground)"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              opacity="0.7"
+            >
+              <path d="M 110 228 L 110 268" />
+              <path d="M 200 290 L 240 290" />
+              <path d="M 340 290 L 360 290" />
+              <path d="M 490 290 L 510 290" />
+            </g>
+          </svg>
+        </div>
+
+        <figcaption class="mt-4 pinax-mono text-[0.78rem] text-muted-foreground">
+          Figura 1 · Rúbrica de ejemplo: 70 % tareas, 30 % criterios
+          adicionales. La nota final combina ambos bloques ponderados.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>

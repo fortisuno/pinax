@@ -1,0 +1,114 @@
+---
+// Exporta a PDF — the deliverable.
+---
+
+<section
+  id="pdf"
+  aria-labelledby="pdf-title"
+  class="border-t border-border px-6 py-20 md:px-12 md:py-28 lg:px-16"
+>
+  <div class="mx-auto max-w-5xl">
+    <div class="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-12 lg:gap-16">
+      <header class="md:col-span-5">
+        <h2
+          id="pdf-title"
+          class="pinax-display text-[1.9rem] md:text-[2.4rem] leading-[1.1] text-foreground"
+        >
+          El PDF que entregas al final del trimestre se sostiene solo.
+        </h2>
+        <p class="mt-5 text-[1rem] leading-[1.6] text-muted-foreground">
+          Cuando terminas el periodo, Pinax exporta un PDF con la lista del
+          grupo, las notas por tarea, el detalle de cada criterio y la nota
+          final ponderada — listo para imprimir, archivar o enviar a las
+          familias.
+        </p>
+        <p class="mt-4 text-[1rem] leading-[1.6] text-muted-foreground">
+          El documento se genera en tu equipo mediante el diálogo nativo de
+          guardar archivo, sin enviar los datos a ningún servicio intermedio.
+        </p>
+      </header>
+
+      <figure
+        class="md:col-span-7"
+        role="img"
+        aria-label="Vista previa de un PDF exportado: hoja con la lista del grupo, las notas y la nota final."
+      >
+        <div class="rounded-xl border border-border bg-muted/30 p-6 md:p-9">
+          <div class="mx-auto max-w-[420px] rounded-lg border border-border bg-card p-6 md:p-7 shadow-md">
+            <header class="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <p class="pinax-mono text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">Pinax Desktop</p>
+                <p class="pinax-display text-[0.96rem] mt-0.5 text-foreground">Notas finales · 4ºB</p>
+              </div>
+              <p class="pinax-mono text-[0.68rem] text-muted-foreground">2025 / 2026</p>
+            </header>
+
+            <table class="mt-4 w-full text-[0.78rem] pinax-mono">
+              <thead>
+                <tr class="text-muted-foreground">
+                  <th class="py-1.5 text-left font-normal">Alumno</th>
+                  <th class="py-1.5 text-right font-normal">T1</th>
+                  <th class="py-1.5 text-right font-normal">T2</th>
+                  <th class="py-1.5 text-right font-normal">T3</th>
+                  <th class="py-1.5 text-right font-normal">C₁</th>
+                  <th class="py-1.5 text-right font-normal">Final</th>
+                </tr>
+              </thead>
+              <tbody class="text-foreground">
+                <tr class="border-t border-border">
+                  <td class="py-1.5">Lucía R.</td>
+                  <td class="py-1.5 text-right">8,5</td>
+                  <td class="py-1.5 text-right">9,0</td>
+                  <td class="py-1.5 text-right">7,5</td>
+                  <td class="py-1.5 text-right">+0,4</td>
+                  <td class="py-1.5 text-right font-medium text-primary">8,7</td>
+                </tr>
+                <tr class="border-t border-border">
+                  <td class="py-1.5">Mateo G.</td>
+                  <td class="py-1.5 text-right">6,0</td>
+                  <td class="py-1.5 text-right">7,0</td>
+                  <td class="py-1.5 text-right">8,0</td>
+                  <td class="py-1.5 text-right">+0,0</td>
+                  <td class="py-1.5 text-right font-medium text-primary">7,0</td>
+                </tr>
+                <tr class="border-t border-border">
+                  <td class="py-1.5">Sofía P.</td>
+                  <td class="py-1.5 text-right">9,5</td>
+                  <td class="py-1.5 text-right">9,0</td>
+                  <td class="py-1.5 text-right">9,0</td>
+                  <td class="py-1.5 text-right">+0,2</td>
+                  <td class="py-1.5 text-right font-medium text-primary">9,4</td>
+                </tr>
+                <tr class="border-t border-border">
+                  <td class="py-1.5">Diego M.</td>
+                  <td class="py-1.5 text-right">5,5</td>
+                  <td class="py-1.5 text-right">6,0</td>
+                  <td class="py-1.5 text-right">7,0</td>
+                  <td class="py-1.5 text-right">−0,5</td>
+                  <td class="py-1.5 text-right font-medium text-primary">6,2</td>
+                </tr>
+                <tr class="border-t border-border">
+                  <td class="py-1.5">Vera L.</td>
+                  <td class="py-1.5 text-right">8,0</td>
+                  <td class="py-1.5 text-right">8,5</td>
+                  <td class="py-1.5 text-right">9,0</td>
+                  <td class="py-1.5 text-right">+0,3</td>
+                  <td class="py-1.5 text-right font-medium text-primary">8,6</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <footer class="mt-5 flex items-center justify-between border-t border-border pt-3 pinax-mono text-[0.66rem] text-muted-foreground">
+              <span>Rúbrica: 70 % tareas · 30 % criterios</span>
+              <span class="text-foreground">p. 1 / 1</span>
+            </footer>
+          </div>
+        </div>
+        <figcaption class="mt-4 pinax-mono text-[0.78rem] text-muted-foreground">
+          Figura 3 · PDF exportado desde Pinax: la misma estructura que
+          muestra la app, lista para imprimir.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>

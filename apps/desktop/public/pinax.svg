@@ -1,0 +1,11 @@
+
+      <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+        
+        <rect x="0" y="0" width="1024" height="1024" rx="80" ry="80" fill="#000000" />
+        <g transform="translate(512, 512) rotate(0)">
+           <g transform="translate(-400, -400)">
+             <svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 24 24" fill="#ffffff" stroke="#ffffff" stroke-width="1.44" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column" fill-opacity="0"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>
+           </g>
+        </g>
+      </svg>
+    

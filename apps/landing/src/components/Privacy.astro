@@ -1,0 +1,122 @@
+---
+// Privacidad por diseño — local-first
+---
+
+<section
+  id="privacidad"
+  aria-labelledby="privacy-title"
+  class="border-t border-border bg-muted/30 px-6 py-20 md:px-12 md:py-28 lg:px-16"
+>
+  <div class="mx-auto max-w-5xl">
+    <div class="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-12 lg:gap-16">
+      <figure
+        class="md:col-span-6 md:order-2"
+        role="img"
+        aria-label="Diagrama: los datos del grupo viven dentro del portátil y no salen a ningún servidor."
+      >
+        <div
+          class="rounded-xl border border-border bg-card p-7 md:p-10 lg:p-12 shadow-sm"
+        >
+          <svg
+            viewBox="0 0 480 280"
+            xmlns="http://www.w3.org/2000/svg"
+            class="block h-auto w-full"
+            role="presentation"
+          >
+            {/* laptop outline */}
+            <g
+              fill="none"
+              stroke="var(--foreground)"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="60" y="50" width="280" height="170" rx="6" />
+              <rect x="80" y="70" width="240" height="130" rx="3" />
+              <path d="M 40 230 L 360 230" />
+              <path d="M 180 220 L 220 220" />
+            </g>
+
+            {/* datos labels inside the laptop */}
+            <g
+              font-family="IBM Plex Mono, monospace"
+              font-size="11"
+              fill="var(--foreground)"
+              letter-spacing="1"
+            >
+              <rect x="100" y="92" width="80" height="22" rx="3" fill="none" stroke="var(--border)" stroke-width="1" />
+              <text x="140" y="107" text-anchor="middle">alumnos</text>
+
+              <rect x="190" y="92" width="110" height="22" rx="3" fill="none" stroke="var(--border)" stroke-width="1" />
+              <text x="245" y="107" text-anchor="middle">rúbrica</text>
+
+              <rect x="100" y="124" width="80" height="22" rx="3" fill="none" stroke="var(--border)" stroke-width="1" />
+              <text x="140" y="139" text-anchor="middle">tareas</text>
+
+              <rect x="190" y="124" width="110" height="22" rx="3" fill="none" stroke="var(--border)" stroke-width="1" />
+              <text x="245" y="139" text-anchor="middle">notas finales</text>
+
+              <rect x="100" y="156" width="200" height="22" rx="3" fill="none" stroke="var(--primary)" stroke-width="1" />
+              <text x="200" y="171" text-anchor="middle" fill="var(--primary)" text-transform="uppercase" font-family="IBM Plex Sans, system-ui, sans-serif" font-size="10" letter-spacing="2">localStorage · sin sync</text>
+            </g>
+
+            {/* outside the laptop — crossed-out cloud */}
+            <g
+              fill="none"
+              stroke="var(--muted-foreground)"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-dasharray="4 4"
+            >
+              <path d="M 388 110 q -14 -22 6 -32 q -2 -22 24 -22 q 14 -16 36 -8 q 14 -10 26 6 q 22 0 22 22 q 12 8 0 22" />
+            </g>
+
+            {/* prohibition */}
+            <g
+              fill="none"
+              stroke="var(--destructive)"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <line x1="380" y1="80" x2="478" y2="180" />
+            </g>
+
+            <g
+              font-family="IBM Plex Sans, system-ui, sans-serif"
+              font-size="10"
+              fill="var(--muted-foreground)"
+              letter-spacing="2"
+            >
+              <text x="408" y="218" text-anchor="middle" text-transform="uppercase">sin servidor</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption class="mt-4 pinax-mono text-[0.78rem] text-muted-foreground">
+          Figura 2 · El estado del grupo vive dentro del dispositivo. No se
+          envía a ningún servidor en ningún momento.
+        </figcaption>
+      </figure>
+
+      <div class="md:col-span-6 md:order-1">
+        <h2
+          id="privacy-title"
+          class="pinax-display text-[1.9rem] md:text-[2.4rem] leading-[1.1] text-foreground"
+        >
+          Privacidad por diseño, no por promesa.
+        </h2>
+        <p class="mt-5 text-[1rem] leading-[1.6] text-muted-foreground">
+          Pinax no se conecta a ningún servicio externo. Los nombres de tus
+          alumnos, sus notas y tu rúbrica viven en el
+          <code class="pinax-mono text-[0.92em] text-foreground bg-muted px-1.5 py-0.5 rounded-md">localStorage</code> del navegador que ejecuta la
+          app de escritorio. No hay cuenta que robar, no hay base de datos que
+          filtrar.
+        </p>
+        <p class="mt-4 text-[1rem] leading-[1.6] text-muted-foreground">
+          Si Pinax alguna vez ofrece sincronización entre dispositivos, será
+          opcional, cifrada extremo a extremo y activada por el docente — no
+          impuesta por el producto.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

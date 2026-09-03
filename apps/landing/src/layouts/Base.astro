@@ -1,0 +1,54 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Pinax Desktop — Calificaciones ponderadas para primaria",
+  description = "Pinax Desktop es una aplicación de escritorio que calcula las notas finales de tu grupo de primaria a partir de tareas y una rúbrica ponderada que tú defines. Tus datos viven en tu equipo, sin cuentas ni nube.",
+} = Astro.props;
+
+const inlineThemeScript = `
+(function () {
+  try {
+    var stored = localStorage.getItem('pinax-theme');
+    var queryTheme = new URLSearchParams(location.search).get('theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var theme = stored || queryTheme || (prefersDark ? 'dark' : 'light');
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+  } catch (e) {}
+})();
+`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/pinax.svg" />
+    <link rel="alternate icon" href="/pinax.png" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+
+    <script is:inline set:html={inlineThemeScript}></script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

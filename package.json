@@ -1,0 +1,18 @@
+{
+  "name": "pinax-desktop",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Pinax Desktop - Aplicación de escritorio para gestión de criterios de evaluación.",
+  "author": "Pinax",
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "dev": "pnpm --filter @pinax/desktop dev",
+    "dev:desktop": "pnpm --filter @pinax/desktop dev",
+    "dev:landing": "pnpm --filter @pinax/landing dev",
+    "build": "pnpm --filter @pinax/desktop build",
+    "build:desktop": "pnpm --filter @pinax/desktop build",
+    "build:landing": "pnpm --filter @pinax/landing build",
+    "lint": "pnpm -r --no-bail lint",
+    "preview": "pnpm --filter @pinax/desktop preview"
+  }
+}

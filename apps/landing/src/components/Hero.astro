@@ -1,0 +1,144 @@
+---
+import Icon from "./Icon.astro";
+
+const linuxHref =
+  "https://github.com/fortisuno/pinax-desktop/releases/latest/download/pinax-Linux-0.0.0.AppImage";
+const repoHref =
+  "https://github.com/fortisuno/pinax-desktop";
+---
+
+<header
+  class="relative px-6 pt-10 pb-24 md:px-12 md:pt-16 md:pb-32 lg:px-16 lg:pt-24"
+>
+  <nav
+    class="mx-auto flex max-w-5xl items-center justify-between text-[0.82rem] uppercase tracking-[0.18em]"
+  >
+    <a
+      href="/"
+      class="inline-flex items-center gap-3 pinax-sans text-foreground"
+      aria-label="Pinax Desktop"
+    >
+      <Icon size={28} class="shrink-0" />
+      <span class="hidden sm:inline">Pinax Desktop</span>
+    </a>
+    <ul class="flex items-center gap-5 md:gap-7">
+      <li>
+        <a
+          href="https://github.com/fortisuno/pinax-desktop"
+          class="text-muted-foreground hover:text-foreground transition-colors"
+          target="_blank"
+          rel="noopener"
+          >Repositorio</a
+        >
+      </li>
+      <li>
+        <a
+          href="#como-funciona"
+          class="text-muted-foreground hover:text-foreground transition-colors"
+          >Cómo funciona</a
+        >
+      </li>
+      <li>
+        <a
+          href={linuxHref}
+          class="hidden md:inline-flex items-center gap-2 pinax-sans text-foreground hover:opacity-70 transition-opacity"
+          target="_blank"
+          rel="noopener"
+        >
+          <span>Descargar</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3v14"></path>
+            <path d="m6 11 6 6 6-6"></path>
+            <path d="M5 21h14"></path>
+          </svg>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="mx-auto max-w-3xl pt-20 md:pt-28 lg:pt-36 text-center">
+    <div class="flex justify-center">
+      <Icon size={120} class="md:scale-110 lg:scale-125" />
+    </div>
+
+    <h1
+      class="mt-10 pinax-display text-[clamp(2.6rem,7vw,5rem)] leading-[1.04] text-foreground"
+    >
+      Pinax Desktop
+    </h1>
+
+    <p
+      class="mt-7 mx-auto max-w-xl text-[1.06rem] md:text-[1.18rem] leading-[1.55] text-muted-foreground"
+    >
+      La app de cálculo de notas ponderadas para tu grupo de primaria. Tus
+      tareas, tu rúbrica, tu nota final — en tu equipo, sin nube.
+    </p>
+
+    <div
+      class="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-3"
+    >
+      <a
+        href={linuxHref}
+        class="group inline-flex items-center justify-center gap-3 rounded-md px-7 py-3 pinax-sans text-[0.96rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+        target="_blank"
+        rel="noopener"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 3v14"></path>
+          <path d="m6 11 6 6 6-6"></path>
+          <path d="M5 21h14"></path>
+        </svg>
+        <span>Descargar para Linux</span>
+        <span class="opacity-70">·</span>
+        <span class="opacity-90 pinax-mono text-[0.82rem]">.AppImage</span>
+      </a>
+
+      <a
+        href={repoHref}
+        class="inline-flex items-center gap-2 rounded-md px-4 py-3 pinax-sans text-[0.96rem] text-muted-foreground border border-border bg-card hover:text-foreground hover:bg-accent transition-colors"
+        target="_blank"
+        rel="noopener"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-2.13c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.94 10.94 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.68 5.36-5.24 5.65.41.35.78 1.05.78 2.11v3.13c0 .3.21.66.79.55 4.57-1.52 7.86-5.83 7.86-10.91C23.5 5.65 18.35.5 12 .5z"
+          ></path>
+        </svg>
+        <span>Ver en GitHub</span>
+      </a>
+    </div>
+
+    <p class="mt-8 pinax-mono text-[0.78rem] text-muted-foreground">
+      Windows · macOS — próximamente · 100% local, sin cuentas
+    </p>
+  </div>
+</header>

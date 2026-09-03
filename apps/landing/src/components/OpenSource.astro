@@ -1,0 +1,95 @@
+---
+const repoHref = "https://github.com/fortisuno/pinax-desktop";
+---
+
+<section
+  id="codigo-abierto"
+  aria-labelledby="oss-title"
+  class="border-t border-border bg-muted/30 px-6 py-20 md:px-12 md:py-28 lg:px-16"
+>
+  <div class="mx-auto max-w-5xl">
+    <div class="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-12 lg:gap-16">
+      <figure class="md:col-span-7 md:order-2">
+        <div class="rounded-xl border border-border bg-card shadow-sm">
+          <header class="flex items-center justify-between border-b border-border px-4 py-2.5 pinax-mono text-[0.74rem] text-muted-foreground">
+            <span class="inline-flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-2.13c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.94 10.94 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.68 5.36-5.24 5.65.41.35.78 1.05.78 2.11v3.13c0 .3.21.66.79.55 4.57-1.52 7.86-5.83 7.86-10.91C23.5 5.65 18.35.5 12 .5z"></path>
+              </svg>
+              fortisuno/pinax-desktop
+            </span>
+            <span class="hidden sm:inline">main</span>
+          </header>
+          <div class="px-4 py-4 pinax-mono text-[0.78rem] leading-[1.55] text-foreground">
+            <p><span class="text-muted-foreground">$</span> tree -L 2</p>
+            <p class="text-foreground/85">.</p>
+            <p class="text-foreground/85">├── apps</p>
+            <p class="text-foreground/85">│ ├── desktop</p>
+            <p class="text-foreground/85">│&nbsp;&nbsp;&nbsp;├── electron/ <span class="text-muted-foreground"># ventana y empaquetado</span></p>
+            <p class="text-foreground/85">│&nbsp;&nbsp;&nbsp;├── src/ <span class="text-muted-foreground"># React + Vite + Tailwind</span></p>
+            <p class="text-foreground/85">│&nbsp;&nbsp;&nbsp;└── public/ <span class="text-muted-foreground"># pinax.svg</span></p>
+            <p class="text-foreground/85">│ └── landing</p>
+            <p class="text-foreground/85">├── release/ <span class="text-muted-foreground"># artefactos electron-builder</span></p>
+            <p class="text-foreground/85">└── README.md</p>
+            <p class="mt-3"><span class="text-muted-foreground">$</span> cat apps/desktop/PRODUCT.md | head -3</p>
+            <p class="text-foreground/85"># Product</p>
+            <p class="text-foreground/85">Pinax es una aplicación de escritorio que</p>
+            <p class="text-foreground/85">centraliza el cálculo de calificaciones…</p>
+          </div>
+        </div>
+        <figcaption class="mt-4 pinax-mono text-[0.78rem] text-muted-foreground">
+          Figura 4 · Estructura real del repositorio.
+        </figcaption>
+      </figure>
+
+      <div class="md:col-span-5 md:order-1">
+        <h2
+          id="oss-title"
+          class="pinax-display text-[1.9rem] md:text-[2.4rem] leading-[1.1] text-foreground"
+        >
+          Código abierto. Sin telemetría, sin ascensor para salir.
+        </h2>
+        <p class="mt-5 text-[1rem] leading-[1.6] text-muted-foreground">
+          El repositorio es público. Puedes leer cada archivo, ejecutar
+          Pinax desde el código fuente, y verificar que no hace nada que no
+          dice que hace. Sin ofuscación, sin dependencias sospechosas.
+        </p>
+        <p class="mt-4 text-[1rem] leading-[1.6] text-muted-foreground">
+          Construido con Electron, React, Tailwind y Zustand. Sin servicios
+          externos. Si el proyecto desaparece mañana, tu instalación local
+          sigue funcionando.
+        </p>
+
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a
+            href={repoHref}
+            class="inline-flex items-center gap-2 rounded-md px-4 py-2.5 pinax-sans text-[0.96rem] bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-2.13c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.94 10.94 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.82 1.18 3.07 0 4.4-2.68 5.36-5.24 5.65.41.35.78 1.05.78 2.11v3.13c0 .3.21.66.79.55 4.57-1.52 7.86-5.83 7.86-10.91C23.5 5.65 18.35.5 12 .5z"></path>
+            </svg>
+            <span>Abrir el repositorio</span>
+          </a>
+          <a
+            href={`${repoHref}#readme`}
+            class="inline-flex items-center gap-2 rounded-md px-4 py-2.5 pinax-sans text-[0.96rem] text-foreground border border-border hover:bg-accent transition-colors"
+            target="_blank"
+            rel="noopener"
+          >
+            <span>Leer el README</span>
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

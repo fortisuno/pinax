@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-03T10:45:00.000Z",
+  "title": "Design System: Pinax Desktop — Landing",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.205 0 0)",
+          "oklch(0.269 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.922 0 0)",
+          "oklch(0.97 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "foreground": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "oklch(0.145 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.21 0 0)",
+          "oklch(0.4 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.9 0 0)",
+          "oklch(0.97 0 0)",
+          "oklch(0.985 0 0)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Azul Pinax",
+        "canonical": "oklch(0.52 0.105 223.128)",
+        "tonalRamp": [
+          "oklch(0.302 0.056 229.695)",
+          "oklch(0.45 0.085 224.283)",
+          "oklch(0.52 0.105 223.128)",
+          "oklch(0.609 0.126 221.723)",
+          "oklch(0.715 0.143 215.221)",
+          "oklch(0.865 0.127 207.078)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "oklch(0.97 0 0)",
+        "tonalRamp": [
+          "oklch(0.269 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.922 0 0)",
+          "oklch(0.97 0 0)",
+          "oklch(0.985 0 0)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.922 0 0)",
+        "tonalRamp": [
+          "oklch(1 0 0 / 10%)",
+          "oklch(0.708 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.922 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Solo el wordmark Pinax Desktop en el hero."
+      },
+      "display-final": {
+        "displayName": "Display Final",
+        "purpose": "Titular de la sección de cierre (CTA final)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Titulares de sección. Sin eyebrow."
+      },
+      "headline-hero": {
+        "displayName": "Tagline",
+        "purpose": "Línea bajo el wordmark del hero."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Titulares de pilares."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Párrafos, captions. Medida ≤ 75ch."
+      },
+      "body-cta": {
+        "displayName": "Body CTA",
+        "purpose": "Texto de botones primarios y secundarios."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Navegación y microcopy. Uppercase, tracking 0.18em."
+      },
+      "label-tight": {
+        "displayName": "Label Tight",
+        "purpose": "Microcopy técnico (header de repo tree, footer de figuras)."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Notas al pie dentro de figuras."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Figuras SVG, captions técnicas."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px 0 oklch(0 0 0 / 0.05)",
+        "purpose": "Sutil sombra estructural para pilares y figuras."
+      },
+      {
+        "name": "shadow-md",
+        "value": "0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1)",
+        "purpose": "Sombra más fuerte para la vista previa del PDF."
+      }
+    ],
+    "motion": [
+      {
+        "name": "hover-fade",
+        "value": "opacity 0.2s ease-out",
+        "purpose": "Transición de opacidad en hover de botones y links."
+      },
+      {
+        "name": "color-fade",
+        "value": "color 0.2s ease-out",
+        "purpose": "Transición de color en hover de links de navegación."
+      },
+      {
+        "name": "background-fade",
+        "value": "background-color 0.2s ease-out",
+        "purpose": "Transición de fondo en hover de botones secundarios."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button Primary",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "CTA principal. Fondo primary, texto primary-foreground, radio md, sombra shadow-sm.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Descargar para Linux</a>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.75rem; background: var(--primary); color: var(--primary-foreground); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.96rem; font-weight: 500; border-radius: calc(var(--radius) * 0.8); border: none; text-decoration: none; box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05); transition: opacity 0.2s ease-out; cursor: pointer; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+    },
+    {
+      "name": "Button Secondary",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Borde + fondo card. Hover cambia a bg-accent.",
+      "html": "<a class=\"ds-btn-secondary\" href=\"#\">Ver en GitHub</a>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1rem; background: var(--card); color: var(--muted-foreground); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.96rem; border: 1px solid var(--border); border-radius: calc(var(--radius) * 0.8); text-decoration: none; transition: background-color 0.2s ease-out, color 0.2s ease-out; cursor: pointer; } .ds-btn-secondary:hover { background: var(--accent); color: var(--foreground); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Link de navegación. Label uppercase con tracking amplio.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">Repositorio</a></nav>",
+      "css": ".ds-nav-link { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-foreground); text-decoration: none; transition: color 0.2s ease-out; } .ds-nav-link:hover { color: var(--foreground); } .ds-nav-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }"
+    },
+    {
+      "name": "Pillar Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Tarjeta de pilar. Borde, bg-card, rounded-xl, shadow-sm.",
+      "html": "<div class=\"ds-pillar\"><h3>...</h3><p>...</p></div>",
+      "css": ".ds-pillar { background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.4); padding: 1.75rem; box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05); } .ds-pillar h3 { font-family: 'Source Serif 4', serif; font-size: 1.4rem; line-height: 1.2; letter-spacing: -0.025em; font-weight: 500; } .ds-pillar p { margin-top: 0.75rem; color: var(--muted-foreground); font-size: 1rem; line-height: 1.6; }"
+    },
+    {
+      "name": "Figure / Diagram Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Contenedor para diagramas SVG. Border, bg-card, rounded-xl, shadow-sm.",
+      "html": "<figure class=\"ds-figure\"><svg viewBox=\"0 0 600 360\"></svg></figure>",
+      "css": ".ds-figure { background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.4); padding: 1.75rem; box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05); } .ds-figure svg { display: block; width: 100%; height: auto; }"
+    },
+    {
+      "name": "PDF Preview Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Vista previa del PDF exportado. Tarjeta con rounded-lg y shadow-md; valores destacados en text-primary.",
+      "html": "<div class=\"ds-pdf\"><header></header><table></table><footer></footer></div>",
+      "css": ".ds-pdf { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1); } .ds-pdf table { width: 100%; margin-top: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; } .ds-pdf .final { color: var(--primary); font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El mismo producto, leído en el navegador.",
+    "overview": "Landing canónica para Pinax Desktop que hereda el sistema shadcn/ui de apps/desktop/: oklch, fondo neutro claro/oscuro, primario azul, tarjetas con borde y radio 0.625rem. Antes de esta iteración la landing era monocroma (papel + tinta) como延续 del icono de marca; ese compromiso se sustituye por shadcn — la promesa de privacidad y consistencia con la app pesa más que la coherencia con el cuadrado negro del icono. El icono sigue siendo el cuadrado negro con el glifo de gráfico de barras; el resto de la landing se apoya en el sistema shadcn. Forma deliberadamente convencional: hero con icono + wordmark + tagline + CTA principal, tres pilares cortos, secciones por feature con un diagrama SVG cada una, footer con repo y enlaces.",
+    "keyCharacteristics": [
+      "Sistema shadcn/ui (oklch) alineado con apps/desktop/.",
+      "Primario azul (oklch(0.52 0.105 223.128) claro / oklch(0.715 0.143 215.221) oscuro).",
+      "Tarjetas con borde + radio 0.625rem y sombra sutil (shadow-sm / shadow-md).",
+      "Tipografía con peso: Source Serif 4 + IBM Plex Sans + IBM Plex Mono.",
+      "Diagramas SVG autorales que muestran el mecanismo, no capturas de stock."
+    ],
+    "rules": [
+      {
+        "name": "The Primary Acts Rule",
+        "body": "El primario azul aparece sólo donde hace algo: el botón de descarga, la Nota final del diagrama, los valores destacados de la tabla. Nunca decora, nunca rellena un área inactiva.",
+        "section": "colors"
+      },
+      {
+        "name": "The Border-First Rule",
+        "body": "Antes de añadir cualquier sombra, considera un borde var(--border). La sombra shadow-sm queda reservada para tarjetas que la necesitan.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Kicker Rule",
+        "body": "Ningún titular lleva eyebrow, kicker ni label numeral encima. El heading carga su propio peso.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Usa el sistema de tokens shadcn (bg-background, text-foreground, bg-card, text-primary, border-border, etc.) — nunca introduzcas valores cromáticos fuera de la paleta.",
+      "Mantén el primario azul reservado para acciones y para destacar valores en datos.",
+      "Usa rounded-xl para tarjetas y figuras, rounded-md para botones.",
+      "Mantén el icono de marca (pinax.svg) sin alterar."
+    ],
+    "donts": [
+      "Introduzcas un color saturado fuera del primario azul.",
+      "Uses sombras blandas decorativas (shadow-2xl, drop shadows, glow).",
+      "Uses cards como contenedor perezoso de la página para secciones enteras.",
+      "Uses emoji como iconos.",
+      "Uses eyebrow / kicker / section numerals arriba de los titulares.",
+      "Devuelvas la paleta a monochromo o a valores personalizados."
+    ]
+  }
+}
