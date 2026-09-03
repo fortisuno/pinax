@@ -16,6 +16,12 @@ jobs:
   prepare:
     name: Detect version bump
     runs-on: ubuntu-latest
+    # Only run on pushes to main that come from merging the changesets Release PR
+    # (changeset-release/main). Squash/merge commits use the PR title ("Release
+    # <version>") and rebase merges keep the action's commit message ("Version Packages").
+    if: |
+      startsWith(github.event.head_commit.message, 'Version Packages') ||
+      startsWith(github.event.head_commit.message, 'Release ')
     outputs:
       should-release: ${{ steps.check.outputs.should-release }}
       version: ${{ steps.check.outputs.version }}
@@ -121,6 +127,12 @@ jobs:
             fs.writeFileSync('release-notes.md', notes);
           "
 
+      - name: Flatten installers
+        run: |
+          mkdir -p installers
+          find artifacts -type f -exec mv {} installers/ \;
+          find artifacts -mindepth 1 -type d -empty -delete
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,4 +141,4 @@ jobs:
           gh release create "v$RELEASE_VERSION" \
             --title "$RELEASE_VERSION" \
             --notes-file release-notes.md \
-            artifacts/*
+            installers/*
