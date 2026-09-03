@@ -2,21 +2,65 @@
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.pinax.desktop",
+  "copyright": "Copyright © ${author} ${year}",
   "asar": true,
   "productName": "pinax",
   "executableName": "pinax",
   "directories": {
-    "output": "../../release/${version}"
+    "output": "../../release/${version}",
+    "buildResources": "build"
   },
   "files": [
     "dist",
     "dist-electron"
   ],
   "mac": {
+    "category": "public.app-category.education",
+    "icon": "public/pinax.icns",
+    "darkModeSupport": true,
+    "hardenedRuntime": false,
+    "gatekeeperAssess": false,
+    "minimumSystemVersion": "11.0.0",
     "target": [
-      "dmg"
+      {
+        "target": "dmg",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      },
+      {
+        "target": "zip",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
     ],
-    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+    "artifactName": "${productName}-Mac-${version}-${arch}.${ext}",
+    "extendInfo": {
+      "NSHumanReadableCopyright": "Copyright © ${author} ${year}",
+      "LSApplicationCategoryType": "public.app-category.education",
+      "CFBundleDocumentTypes": []
+    }
+  },
+  "dmg": {
+    "title": "${productName} ${version}",
+    "icon": "public/pinax.icns",
+    "iconSize": 96,
+    "contents": [
+      {
+        "x": 130,
+        "y": 220,
+        "type": "file"
+      },
+      {
+        "x": 410,
+        "y": 220,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ]
   },
   "win": {
     "target": [
@@ -28,13 +72,19 @@
       }
     ],
     "icon": "public/pinax.ico",
+    "publisherName": "Pinax",
+    "verifyUpdateCodeSignature": false,
+    "requestedExecutionLevel": "asInvoker",
     "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
   },
   "nsis": {
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
-    "deleteAppDataOnUninstall": false
+    "deleteAppDataOnUninstall": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Pinax"
   },
   "linux": {
     "target": [
@@ -45,6 +95,8 @@
     },
     "icon": "build/icons",
     "category": "Education",
+    "synopsis": "Pinax Desktop - Gestión de criterios de evaluación",
+    "description": "Aplicación de escritorio para gestión de criterios de evaluación.",
     "artifactName": "${productName}-Linux-${version}.${ext}"
   }
 }

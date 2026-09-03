@@ -1,0 +1,132 @@
+name: Publish Desktop
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    name: Detect version bump
+    runs-on: ubuntu-latest
+    outputs:
+      should-release: ${{ steps.check.outputs.should-release }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for an unreleased desktop version
+        id: check
+        run: |
+          VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$VERSION" = "0.0.0" ]; then
+            echo "Initial placeholder version, nothing to release"
+            echo "should-release=false" >> "$GITHUB_OUTPUT"
+          elif git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "Tag v$VERSION already exists, nothing to release"
+            echo "should-release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Desktop bumped to $VERSION, creating release"
+            echo "should-release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: Build installers (${{ matrix.platform }})
+    needs: prepare
+    if: needs.prepare.outputs.should-release == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-latest
+          - platform: windows
+            os: windows-latest
+          - platform: macos
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build installers
+        run: pnpm --filter @pinax/desktop build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.platform }}
+          path: release/${{ needs.prepare.outputs.version }}/*
+          if-no-files-found: error
+
+  publish:
+    name: Create GitHub Release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Extract release notes from changelog
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const version = process.env.RELEASE_VERSION;
+            let notes = 'Release ' + version;
+            try {
+              const changelog = fs.readFileSync('apps/desktop/CHANGELOG.md', 'utf8');
+              const marker = '## ' + version;
+              const start = changelog.indexOf(marker);
+              if (start !== -1) {
+                const bodyStart = start + marker.length;
+                const next = changelog.indexOf('\n## ', bodyStart);
+                const section = (next === -1 ? changelog.slice(bodyStart) : changelog.slice(bodyStart, next)).trim();
+                if (section) notes = section;
+              }
+            } catch {}
+            fs.writeFileSync('release-notes.md', notes);
+          "
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          gh release create "v$RELEASE_VERSION" \
+            --title "$RELEASE_VERSION" \
+            --notes-file release-notes.md \
+            artifacts/*

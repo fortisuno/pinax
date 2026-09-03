@@ -161,7 +161,7 @@
       "refersTo": "button-primary",
       "description": "CTA principal. Fondo primary, texto primary-foreground, radio md, sombra shadow-sm.",
       "html": "<a class=\"ds-btn-primary\" href=\"#\">Descargar para Linux</a>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.75rem; background: var(--primary); color: var(--primary-foreground); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.96rem; font-weight: 500; border-radius: calc(var(--radius) * 0.8); border: none; text-decoration: none; box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05); transition: opacity 0.2s ease-out; cursor: pointer; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.75rem; background: var(--primary); color: var(--primary-foreground); font-family: 'Outfit', sans-serif; font-size: 0.96rem; font-weight: 500; border-radius: calc(var(--radius) * 0.8); border: none; text-decoration: none; box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05); transition: opacity 0.2s ease-out; cursor: pointer; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
     },
     {
       "name": "Button Secondary",
@@ -169,7 +169,7 @@
       "refersTo": "button-secondary",
       "description": "Borde + fondo card. Hover cambia a bg-accent.",
       "html": "<a class=\"ds-btn-secondary\" href=\"#\">Ver en GitHub</a>",
-      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1rem; background: var(--card); color: var(--muted-foreground); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.96rem; border: 1px solid var(--border); border-radius: calc(var(--radius) * 0.8); text-decoration: none; transition: background-color 0.2s ease-out, color 0.2s ease-out; cursor: pointer; } .ds-btn-secondary:hover { background: var(--accent); color: var(--foreground); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1rem; background: var(--card); color: var(--muted-foreground); font-family: 'Outfit', sans-serif; font-size: 0.96rem; border: 1px solid var(--border); border-radius: calc(var(--radius) * 0.8); text-decoration: none; transition: background-color 0.2s ease-out, color 0.2s ease-out; cursor: pointer; } .ds-btn-secondary:hover { background: var(--accent); color: var(--foreground); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
     },
     {
       "name": "Navigation Link",
@@ -177,7 +177,7 @@
       "refersTo": "nav-link",
       "description": "Link de navegación. Label uppercase con tracking amplio.",
       "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">Repositorio</a></nav>",
-      "css": ".ds-nav-link { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-foreground); text-decoration: none; transition: color 0.2s ease-out; } .ds-nav-link:hover { color: var(--foreground); } .ds-nav-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }"
+      "css": ".ds-nav-link { font-family: 'Outfit', sans-serif; font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-foreground); text-decoration: none; transition: color 0.2s ease-out; } .ds-nav-link:hover { color: var(--foreground); } .ds-nav-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }"
     },
     {
       "name": "Pillar Card",
@@ -185,7 +185,7 @@
       "refersTo": "card",
       "description": "Tarjeta de pilar. Borde, bg-card, rounded-xl, shadow-sm.",
       "html": "<div class=\"ds-pillar\"><h3>...</h3><p>...</p></div>",
-      "css": ".ds-pillar { background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.4); padding: 1.75rem; box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05); } .ds-pillar h3 { font-family: 'Source Serif 4', serif; font-size: 1.4rem; line-height: 1.2; letter-spacing: -0.025em; font-weight: 500; } .ds-pillar p { margin-top: 0.75rem; color: var(--muted-foreground); font-size: 1rem; line-height: 1.6; }"
+      "css": ".ds-pillar { background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.4); padding: 1.75rem; box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05); } .ds-pillar h3 { font-family: 'Outfit', sans-serif; font-size: 1.4rem; line-height: 1.2; letter-spacing: -0.02em; font-weight: 600; } .ds-pillar p { margin-top: 0.75rem; color: var(--muted-foreground); font-size: 1rem; line-height: 1.6; }"
     },
     {
       "name": "Figure / Diagram Card",
@@ -201,7 +201,7 @@
       "refersTo": "card",
       "description": "Vista previa del PDF exportado. Tarjeta con rounded-lg y shadow-md; valores destacados en text-primary.",
       "html": "<div class=\"ds-pdf\"><header></header><table></table><footer></footer></div>",
-      "css": ".ds-pdf { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1); } .ds-pdf table { width: 100%; margin-top: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; } .ds-pdf .final { color: var(--primary); font-weight: 500; }"
+      "css": ".ds-pdf { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1); } .ds-pdf table { width: 100%; margin-top: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; } .ds-pdf .final { color: var(--primary); font-weight: 500; }"
     }
   ],
   "narrative": {
@@ -211,7 +211,7 @@
       "Sistema shadcn/ui (oklch) alineado con apps/desktop/.",
       "Primario azul (oklch(0.52 0.105 223.128) claro / oklch(0.715 0.143 215.221) oscuro).",
       "Tarjetas con borde + radio 0.625rem y sombra sutil (shadow-sm / shadow-md).",
-      "Tipografía con peso: Source Serif 4 + IBM Plex Sans + IBM Plex Mono.",
+      "Sistema tipográfico sans-only con Outfit (variable) — contraste por peso, tracking negativo progresivo, JetBrains Mono para microcopy técnico.",
       "Diagramas SVG autorales que muestran el mecanismo, no capturas de stock."
     ],
     "rules": [

@@ -46,28 +46,34 @@ typography:
     "0.68rem": "0.68rem"
     "0.66rem": "0.66rem"
   display:
-    fontFamily: "Source Serif 4, Iowan Old Style, Apple Garamond, Georgia, serif"
+    fontFamily: "Outfit, Geist, Inter, Helvetica Neue, system-ui, sans-serif"
     fontSize: "clamp(2.6rem, 7vw, 5rem)"
-    fontWeight: 500
+    fontWeight: 600
     lineHeight: 1.04
-    letterSpacing: "-0.025em"
+    letterSpacing: "-0.04em"
+  display-final:
+    fontFamily: "Outfit, Geist, Inter, Helvetica Neue, system-ui, sans-serif"
+    fontSize: "clamp(2rem, 5vw, 2.7rem)"
+    fontWeight: 600
+    lineHeight: 1.06
+    letterSpacing: "-0.035em"
   headline:
-    fontFamily: "Source Serif 4, Iowan Old Style, Apple Garamond, Georgia, serif"
+    fontFamily: "Outfit, Geist, Inter, Helvetica Neue, system-ui, sans-serif"
     fontSize: "clamp(1.9rem, 4vw, 2.4rem)"
-    fontWeight: 500
+    fontWeight: 600
     lineHeight: 1.1
-    letterSpacing: "-0.025em"
+    letterSpacing: "-0.03em"
   body:
-    fontFamily: "IBM Plex Sans, Helvetica Neue, system-ui, sans-serif"
+    fontFamily: "Outfit, Geist, Inter, Helvetica Neue, system-ui, sans-serif"
     fontSize: "1rem"
     lineHeight: 1.6
   label:
-    fontFamily: "IBM Plex Sans, Helvetica Neue, system-ui, sans-serif"
+    fontFamily: "Outfit, Geist, Inter, Helvetica Neue, system-ui, sans-serif"
     fontSize: "0.82rem"
     letterSpacing: "0.18em"
     textTransform: "uppercase"
   mono:
-    fontFamily: "IBM Plex Mono, ui-monospace, SF Mono, Menlo, monospace"
+    fontFamily: "JetBrains Mono, ui-monospace, SF Mono, Menlo, monospace"
     fontSize: "0.78rem"
 rounded:
   sm: "calc(var(--radius) * 0.6)"
@@ -133,7 +139,9 @@ La forma es deliberadamente convencional: hero con icono + wordmark + tagline + 
 - Sistema shadcn/ui (oklch) alineado con `apps/desktop/`.
 - Primario azul (`oklch(0.52 0.105 223.128)` claro / `oklch(0.715 0.143 215.221)` oscuro).
 - Tarjetas con borde + radio `0.625rem` y sombra suave (`shadow-sm`).
-- Tipografía con peso: Source Serif 4 para titulares, IBM Plex Sans para cuerpo, IBM Plex Mono para microcopy.
+- Sistema tipográfico sans-only con Outfit (variable) — contraste por peso, no por familia.
+- Tracking negativo progresivo: `-0.04em` en display → `-0.005em` en body.
+- Mono JetBrains Mono para microcopy técnico (repo tree, captions, firmas de figuras).
 - Diagramas SVG autorales que muestran el mecanismo (rúbrica, datos locales, PDF).
 
 ## Colors
@@ -164,25 +172,26 @@ El sistema sigue los tokens canónicos shadcn/ui. Modo claro: blanco puro como f
 
 ## Typography
 
-**Display Font:** Source Serif 4 con fallback a Iowan Old Style / Georgia.
-**Body Font:** IBM Plex Sans con fallback a system-ui.
-**Mono Font:** IBM Plex Mono para microcopy, captions y figuras dentro de SVG.
+**Display + Body Font:** Outfit (variable, weights 300–700) con fallback a Geist / Inter / system-ui. Sans-only system: el wordmark del hero, los titulares de sección y el cuerpo viven en una sola familia con contraste por peso.
+**Mono Font:** JetBrains Mono con fallback a system mono. Para microcopy, captions y figuras dentro de SVG.
 
-**Character:** Una serif humanista contemporánea para titulares (no display exuberante; no revival) acompañada de un grotesk institucional de IBM para cuerpo. La serif tiene peso y variación óptica, lo que le da presencia sin pomposidad. El sans es neutro, técnico, serio — habla como un manual, no como un brochure.
+**Character:** Outfit es un grotesk geométrico moderno (Smartsheet, 2021) con proporciones abiertas, terminales ligeramente humanistas y un eje variable de peso de 100 a 900. Contraste por peso en lugar de por familia: 600 para display y headlines, 500 para títulos de pilar y CTAs, 400 para cuerpo. Tracking negativo (-0.04em en display, -0.005em en body) refuerza el aire moderno. `font-optical-sizing: auto` activado para que la fuente ajuste el ancho de los trazos al tamaño de uso. Se eligió Outfit sobre Geist (sucesor de shadcn/Vercel) porque aporta la misma sensación moderna sin caer en la convergencia tipográfica que el detector ya marca como sobre-usada en landings AI-generadas.
 
 ### Hierarchy
-- **Display** (Source Serif 4, weight 500, `clamp(2.6rem, 7vw, 5rem)`, line-height 1.04, tracking `-0.025em`): solo el wordmark "Pinax Desktop" en el hero.
-- **Display final** (Source Serif 4, weight 500, `clamp(2rem, 5vw, 2.7rem)`, line-height 1.06, tracking `-0.025em`): titular de la sección de cierre (CTA final). Un escalón menor que el wordmark del hero.
-- **Headline** (Source Serif 4, weight 500, `clamp(1.9rem, 4vw, 2.4rem)`, line-height 1.1, tracking `-0.025em`): titulares de sección. Sin eyebrow.
-- **Headline-hero** (IBM Plex Sans, weight 400, `clamp(1.06rem, 1.5vw, 1.18rem)`, line-height 1.55): tagline bajo el wordmark — el único paso del cuerpo entre el display y el cuerpo estándar.
-- **Title** (Source Serif 4, weight 500, 1.35–1.45 rem, line-height 1.2): titulares de pilares.
-- **Body** (IBM Plex Sans, weight 400, 1 rem, line-height 1.6): párrafos. Medida ≤ 75ch.
-- **Body-CTA** (IBM Plex Sans, weight 500, 0.96 rem): texto de botones primarios y secundarios (un escalón más pequeño que body estándar para alinear con la altura de los iconos 16 px).
-- **Label** (IBM Plex Sans, weight 400, 0.82 rem, tracking 0.18em, uppercase): navegación, captions de figuras.
-- **Label-tight** (IBM Plex Mono, weight 400, 0.74 rem): microcopy técnico (header del repo tree, captions secundarios del PDF preview).
-- **Caption** (IBM Plex Mono, weight 400, 0.66–0.68 rem): notas al pie dentro de figuras (cabecera del PDF, footer de página).
+- **Display** (Outfit, weight 600, `clamp(2.6rem, 7vw, 5rem)`, line-height 1.04, tracking `-0.04em`): solo el wordmark "Pinax Desktop" en el hero.
+- **Display final** (Outfit, weight 600, `clamp(2rem, 5vw, 2.7rem)`, line-height 1.06, tracking `-0.035em`): titular de la sección de cierre (CTA final).
+- **Headline** (Outfit, weight 600, `clamp(1.9rem, 4vw, 2.4rem)`, line-height 1.1, tracking `-0.03em`): titulares de sección. Sin eyebrow.
+- **Headline-hero** (Outfit, weight 400, `clamp(1.06rem, 1.5vw, 1.18rem)`, line-height 1.55): tagline bajo el wordmark.
+- **Title** (Outfit, weight 600, `clamp(1.35rem, 2vw, 1.45rem)`, line-height 1.2, tracking `-0.02em`): titulares de pilares.
+- **Body** (Outfit, weight 400, 1 rem, line-height 1.6, tracking `-0.005em`): párrafos. Medida ≤ 75ch.
+- **Body-CTA** (Outfit, weight 500, 0.96 rem): texto de botones primarios y secundarios.
+- **Label** (Outfit, weight 500, 0.82 rem, tracking 0.18em, uppercase): navegación, captions de figuras.
+- **Label-tight** (JetBrains Mono, weight 400, 0.74 rem): microcopy técnico (header del repo tree, captions secundarios del PDF preview).
+- **Caption** (JetBrains Mono, weight 400, 0.66–0.68 rem): notas al pie dentro de figuras.
 
 ### Named Rules
+**The Sans-Only Rule.** Una sola familia para todo el sistema: Outfit. El contraste jerárquico viene del peso (300–700), del tamaño y del tracking — nunca de cambiar de familia. Esto separa Pinax de landings editoriales con serif de display y lo alinea con el canon shadcn/Vercel/Linear.
+
 **The No-Kicker Rule.** Ningún titular lleva eyebrow, kicker ni label numeral encima. El heading carga su propio peso.
 
 ## Layout

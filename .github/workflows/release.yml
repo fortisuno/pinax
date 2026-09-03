@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    name: Create Release PR
+    runs-on: ubuntu-latest
+    # Avoid redundancy: skip when the push is the merge of the Release PR created
+    # by changesets/action. Merge/squash commits use the PR title ("Release <version>")
+    # and rebase merges keep the action's commit message ("Version Packages").
+    if: |
+      !startsWith(github.event.head_commit.message, 'Version Packages') &&
+      !startsWith(github.event.head_commit.message, 'Release ')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Calculate next version
+        id: next-version
+        run: |
+          pnpm exec changeset status --output=changeset-status.json || true
+          VERSION=$(node -e "
+            const fs = require('fs');
+            let version = '';
+            try {
+              const status = JSON.parse(fs.readFileSync('changeset-status.json', 'utf8'));
+              const releases = status.releases.filter((r) => r.type !== 'none');
+              const desktop = releases.find((r) => r.name === '@pinax/desktop');
+              version = desktop ? desktop.newVersion : (releases[0]?.newVersion ?? '');
+            } catch {}
+            console.log(version);
+          ")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release Pull Request
+        uses: changesets/action@v1
+        with:
+          title: "Release ${{ steps.next-version.outputs.version }}"
+          version: pnpm version-packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

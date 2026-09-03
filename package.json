@@ -1,11 +1,14 @@
 {
-  "name": "pinax-desktop",
+  "name": "pinax",
   "private": true,
   "version": "0.0.0",
-  "description": "Pinax Desktop - Aplicación de escritorio para gestión de criterios de evaluación.",
+  "description": "Pinax - Monorepo: aplicación de escritorio para gestión de criterios de evaluación y landing page.",
   "author": "Pinax",
   "packageManager": "pnpm@11.22.0",
   "scripts": {
+    "changeset": "changeset",
+    "changeset:dry": "changeset status",
+    "version-packages": "changeset version",
     "dev": "pnpm --filter @pinax/desktop dev",
     "dev:desktop": "pnpm --filter @pinax/desktop dev",
     "dev:landing": "pnpm --filter @pinax/landing dev",
@@ -14,5 +17,9 @@
     "build:landing": "pnpm --filter @pinax/landing build",
     "lint": "pnpm -r --no-bail lint",
     "preview": "pnpm --filter @pinax/desktop preview"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^1.0.0",
+    "@changesets/cli": "^3.0.1"
   }
 }
