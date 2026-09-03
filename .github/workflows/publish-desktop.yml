@@ -1,12 +1,11 @@
 name: Publish Desktop
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types: [closed]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.base.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -16,12 +15,12 @@ jobs:
   prepare:
     name: Detect version bump
     runs-on: ubuntu-latest
-    # Only run on pushes to main that come from merging the changesets Release PR
-    # (changeset-release/main). Squash/merge commits use the PR title ("Release
-    # <version>") and rebase merges keep the action's commit message ("Version Packages").
+    # Only run when the changesets Release PR is merged into main.
     if: |
-      startsWith(github.event.head_commit.message, 'Version Packages') ||
-      startsWith(github.event.head_commit.message, 'Release ')
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'changeset-release/main' &&
+      startsWith(github.event.pull_request.title, 'Release ')
     outputs:
       should-release: ${{ steps.check.outputs.should-release }}
       version: ${{ steps.check.outputs.version }}
