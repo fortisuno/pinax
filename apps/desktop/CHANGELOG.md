@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.2
+
+### Patch Changes
+
+- [`90c7b6a`](https://github.com/fortisuno/pinax/commit/90c7b6a3a5e708a5dc347cf4573122053d46ed4b) Thanks [@fortisuno](https://github.com/fortisuno)! - Fix Release build process
+
 ## 0.1.1
 
 ### Patch Changes
