@@ -1,7 +1,7 @@
 {
   "name": "@pinax/desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pinax Desktop - Aplicación de escritorio para gestión de criterios de evaluación.",
   "author": "Pinax",
   "type": "module",

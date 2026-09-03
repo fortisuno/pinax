@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.1
+
+### Patch Changes
+
+- [`d70c930`](https://github.com/fortisuno/pinax/commit/d70c930f0ce546e200d42541cde89a39afa9b19a) Thanks [@fortisuno](https://github.com/fortisuno)! - Fix windows and macOs builds
+
 ## 0.1.0
 
 ### Minor Changes
