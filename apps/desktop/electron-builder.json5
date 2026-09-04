@@ -69,15 +69,22 @@
         "arch": [
           "x64"
         ]
+      },
+      {
+        "target": "zip",
+        "arch": [
+          "x64"
+        ]
       }
     ],
     "icon": "public/pinax.ico",
     "publisherName": "Pinax",
     "verifyUpdateCodeSignature": false,
     "requestedExecutionLevel": "asInvoker",
-    "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
+    "artifactName": "${productName}-Windows-${version}-Portable.${ext}"
   },
   "nsis": {
+    "artifactName": "${productName}-Windows-${version}-Setup.${ext}",
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
@@ -88,7 +95,8 @@
   },
   "linux": {
     "target": [
-      "AppImage"
+      "AppImage",
+      "zip"
     ],
     "desktop": {
       "StartupWMClass": "pinax"

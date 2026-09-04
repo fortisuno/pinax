@@ -86,7 +86,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: installers-${{ matrix.platform }}
-          path: release/${{ needs.prepare.outputs.version }}/*
+          path: |
+            release/${{ needs.prepare.outputs.version }}/pinax-*.AppImage
+            release/${{ needs.prepare.outputs.version }}/pinax-*.zip
+            release/${{ needs.prepare.outputs.version }}/pinax-*.dmg
+            release/${{ needs.prepare.outputs.version }}/pinax-*-Setup.exe
           if-no-files-found: error
 
   publish:
