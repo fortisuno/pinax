@@ -1,7 +1,16 @@
 ---
-const linuxHref =
-  "https://github.com/fortisuno/pinax/releases/latest/download/pinax-Linux-0.0.0.AppImage";
+const version = "0.1.3";
+const baseUrl = `https://github.com/fortisuno/pinax/releases/download/v${version}`;
 const repoHref = "https://github.com/fortisuno/pinax";
+
+const windowsSetup = `${baseUrl}/pinax-Windows-${version}-Setup.exe`;
+const windowsPortable = `${baseUrl}/pinax-Windows-${version}-Portable.zip`;
+
+const macArm64Dmg = `${baseUrl}/pinax-Mac-${version}-arm64.dmg`;
+const macX64Dmg = `${baseUrl}/pinax-Mac-${version}-x64.dmg`;
+
+const linuxAppImage = `${baseUrl}/pinax-Linux-${version}.AppImage`;
+const linuxZip = `${baseUrl}/pinax-Linux-${version}.zip`;
 ---
 
 <section
@@ -9,60 +18,232 @@ const repoHref = "https://github.com/fortisuno/pinax";
   aria-labelledby="download-title"
   class="border-t border-border bg-muted/30 px-6 py-24 md:px-12 md:py-32 lg:px-16"
 >
-  <div class="mx-auto max-w-3xl text-center">
-    <h2
-      id="download-title"
-      class="pinax-display text-[2rem] md:text-[2.7rem] leading-[1.06] text-foreground"
-    >
-      Empieza por el instalador. Decide después si te quedas.
-    </h2>
-    <p class="mt-5 text-[1rem] leading-[1.6] text-muted-foreground">
-      Un solo archivo. Se abre como una ventana propia en tu escritorio. Tus
-      datos nunca salen de tu equipo, incluido el día que decides desinstalar.
-    </p>
-
-    <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-3">
-      <a
-        href={linuxHref}
-        class="group inline-flex items-center justify-center gap-3 rounded-md px-7 py-4 pinax-sans text-[1rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
-        target="_blank"
-        rel="noopener"
+  <div class="mx-auto max-w-4xl">
+    <div class="text-center">
+      <h2
+        id="download-title"
+        class="pinax-display text-[2rem] md:text-[2.7rem] leading-[1.06] text-foreground"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 3v14"></path>
-          <path d="m6 11 6 6 6-6"></path>
-          <path d="M5 21h14"></path>
-        </svg>
-        <span>Descargar para Linux</span>
-        <span class="opacity-70">·</span>
-        <span class="opacity-90 pinax-mono text-[0.82rem]">.AppImage</span>
-      </a>
+        Empieza por el instalador. Decide después si te quedas.
+      </h2>
+      <p class="mt-5 text-[1rem] leading-[1.6] text-muted-foreground">
+        Un solo archivo. Se abre como una ventana propia en tu escritorio. Tus
+        datos nunca salen de tu equipo, incluido el día que decides desinstalar.
+      </p>
+    </div>
 
+    <div class="mt-12" role="tablist" aria-label="Plataformas de descarga">
+      <div class="flex flex-wrap items-center justify-center gap-2 mb-6" role="tablist">
+        <button
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-windows"
+          id="tab-windows"
+          data-tab="windows"
+          class="tab-btn pinax-sans text-[0.9rem] font-medium px-5 py-2.5 rounded-md bg-primary text-primary-foreground shadow-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="inline-block mr-2 -mt-0.5">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+            <path d="M8 14h8"></path>
+            <path d="M12 10v4"></path>
+          </svg>
+          Windows
+        </button>
+        <button
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-mac"
+          id="tab-mac"
+          data-tab="mac"
+          class="tab-btn pinax-sans text-[0.9rem] font-medium px-5 py-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="inline-block mr-2 -mt-0.5">
+            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+            <path d="M6 3v14"></path>
+            <path d="M18 3v14"></path>
+            <path d="M2 9h20"></path>
+            <path d="M2 15h20"></path>
+          </svg>
+          Mac
+        </button>
+        <button
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-linux"
+          id="tab-linux"
+          data-tab="linux"
+          class="tab-btn pinax-sans text-[0.9rem] font-medium px-5 py-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="inline-block mr-2 -mt-0.5">
+            <path d="M2 12h20"></path>
+            <path d="M12 2v20"></path>
+            <path d="M6 6l12 12"></path>
+            <path d="M6 18l12-12"></path>
+          </svg>
+          Linux
+        </button>
+      </div>
+
+      <div id="panel-windows" role="tabpanel" aria-labelledby="tab-windows" class="tab-panel" data-panel="windows">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 max-w-2xl mx-auto">
+          <a
+            href={windowsSetup}
+            class="group inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>Instalador (.exe)</span>
+            <span class="opacity-70">·</span>
+            <span class="opacity-90 pinax-mono text-[0.82rem]">≈ 83 MB</span>
+          </a>
+          <a
+            href={windowsPortable}
+            class="inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium border border-border bg-background text-foreground hover:bg-accent transition-colors"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>Portable (.zip)</span>
+            <span class="opacity-70">·</span>
+            <span class="opacity-90 pinax-mono text-[0.82rem]">≈ 113 MB</span>
+          </a>
+        </div>
+        <p class="mt-6 text-center pinax-mono text-[0.78rem] text-muted-foreground">
+          Windows 10/11 · x64 · El instalador añade acceso directo y desinstalador
+        </p>
+      </div>
+
+      <div id="panel-mac" role="tabpanel" aria-labelledby="tab-mac" class="tab-panel hidden" data-panel="mac">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 max-w-2xl mx-auto">
+          <a
+            href={macArm64Dmg}
+            class="group inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>Apple Silicon (.dmg)</span>
+            <span class="opacity-70">·</span>
+            <span class="opacity-90 pinax-mono text-[0.82rem]">≈ 103 MB</span>
+          </a>
+          <a
+            href={macX64Dmg}
+            class="inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium border border-border bg-background text-foreground hover:bg-accent transition-colors"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>Intel (.dmg)</span>
+            <span class="opacity-70">·</span>
+            <span class="opacity-90 pinax-mono text-[0.82rem]">≈ 109 MB</span>
+          </a>
+        </div>
+        <p class="mt-6 text-center pinax-mono text-[0.78rem] text-muted-foreground">
+          macOS 12+ · .dmg se abre y arrastra a Aplicaciones · Firmado y notarizado
+        </p>
+      </div>
+
+      <div id="panel-linux" role="tabpanel" aria-labelledby="tab-linux" class="tab-panel hidden" data-panel="linux">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 max-w-2xl mx-auto">
+          <a
+            href={linuxAppImage}
+            class="group inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>AppImage</span>
+            <span class="opacity-70">·</span>
+            <span class="opacity-90 pinax-mono text-[0.82rem]">≈ 114 MB</span>
+          </a>
+          <a
+            href={linuxZip}
+            class="inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium border border-border bg-background text-foreground hover:bg-accent transition-colors"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>Archivo (.zip)</span>
+            <span class="opacity-70">·</span>
+            <span class="opacity-90 pinax-mono text-[0.82rem]">≈ 109 MB</span>
+          </a>
+        </div>
+        <p class="mt-6 text-center pinax-mono text-[0.78rem] text-muted-foreground">
+          Ubuntu 22.04+, Fedora 39+, Arch · AppImage: chmod +x y ejecuta
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-10 text-center">
       <a
         href={repoHref}
         class="inline-flex items-center gap-2 rounded-md px-4 py-4 pinax-sans text-[1rem] text-foreground border border-border hover:bg-accent transition-colors"
         target="_blank"
         rel="noopener"
       >
-        <span>Ver el código fuente</span>
+        <span>Ver el código fuente en GitHub</span>
         <span aria-hidden="true">→</span>
       </a>
     </div>
-
-    <p class="mt-8 pinax-mono text-[0.78rem] text-muted-foreground">
-      Tamaño ≈ 90 MB · Sin instalación de dependencias · Compatible con
-      Ubuntu 22.04+, Fedora 39+, Arch
-    </p>
   </div>
+
+  <script is:inline>
+    const tabs = document.querySelectorAll('[data-tab]');
+    const panels = document.querySelectorAll('[data-panel]');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+
+        tabs.forEach(t => {
+          const isActive = t.dataset.tab === target;
+          t.setAttribute('aria-selected', isActive);
+          t.classList.toggle('bg-primary', isActive);
+          t.classList.toggle('text-primary-foreground', isActive);
+          t.classList.toggle('shadow-sm', isActive);
+          t.classList.toggle('text-muted-foreground', !isActive);
+          t.classList.toggle('hover:text-foreground', !isActive);
+          t.classList.toggle('hover:bg-accent', !isActive);
+        });
+
+        panels.forEach(p => {
+          const isActive = p.dataset.panel === target;
+          p.classList.toggle('hidden', !isActive);
+          p.setAttribute('aria-hidden', !isActive);
+        });
+      });
+
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          tab.click();
+        }
+      });
+    });
+  </script>
 </section>
