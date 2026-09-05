@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.3
+
+### Patch Changes
+
+- [`e4d0880`](https://github.com/fortisuno/pinax/commit/e4d0880fbbab8f6f8cdee35d8cc2766e3672a4ce) - Fix Release bundle
+
 ## 0.1.2
 
 ### Patch Changes
