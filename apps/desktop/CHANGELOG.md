@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.4
+
+### Patch Changes
+
+- [`e1028ec`](https://github.com/fortisuno/pinax/commit/e1028ec9d3c5f1362ab560f37b5413e295b5a72e) - Fix macOs build
+
 ## 0.1.3
 
 ### Patch Changes
