@@ -6,6 +6,7 @@
   "asar": true,
   "productName": "pinax",
   "executableName": "pinax",
+  "afterPack": "scripts/adhoc-sign.cjs",
   "directories": {
     "output": "../../release/${version}",
     "buildResources": "build"

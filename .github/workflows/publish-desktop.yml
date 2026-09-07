@@ -56,10 +56,16 @@ jobs:
         include:
           - platform: linux
             os: ubuntu-latest
+            arch: x64
           - platform: windows
             os: windows-latest
-          - platform: macos
+            arch: x64
+          - platform: macos-intel
             os: macos-latest
+            arch: x64
+          - platform: macos-arm64
+            os: [self-hosted, macOS, ARM64]
+            arch: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -78,7 +84,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build installers
-        run: pnpm --filter @pinax/desktop build
+        run: pnpm --filter @pinax/desktop build -- --arch=${{ matrix.arch }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
