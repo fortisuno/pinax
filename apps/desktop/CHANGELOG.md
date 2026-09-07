@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.8
+
+### Patch Changes
+
+- [`42b43b1`](https://github.com/fortisuno/pinax/commit/42b43b182d5e590e1edc581bd9c2511ecdff03ba) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: clean previous release outputs and adjust ad-hoc signing for macOS builds
+
 ## 0.1.7
 
 ### Patch Changes
