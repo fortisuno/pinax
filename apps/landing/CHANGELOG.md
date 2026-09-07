@@ -1,5 +1,11 @@
 # @pinax/landing
 
+## 0.1.3
+
+### Patch Changes
+
+- [`6a5a079`](https://github.com/fortisuno/pinax/commit/6a5a0795ecb52884ec262a1cb8c83d883fb2242a) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: update version to 0.1.11 in DownloadCta and Hero components
+
 ## 0.1.2
 
 ### Patch Changes

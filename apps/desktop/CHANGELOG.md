@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.11
+
+### Patch Changes
+
+- [`fc20b6e`](https://github.com/fortisuno/pinax/commit/fc20b6e1e3bf99a27846c7b175c8ed17b2c3bae6) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: increase maximum value for quantity input in UpdateCriteriaForm
+
 ## 0.1.10
 
 ### Patch Changes
