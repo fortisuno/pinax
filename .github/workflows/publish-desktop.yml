@@ -84,6 +84,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build installers
+        shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "macos-intel" ]; then
             pnpm --filter @pinax/desktop build -- --mac --x64
@@ -112,6 +113,7 @@ jobs:
 
       - name: Verify macOS signature (mac only)
         if: startsWith(matrix.platform, 'macos-')
+        shell: bash
         run: |
           APP=$(find release/${{ needs.prepare.outputs.version }} -maxdepth 3 -name "*.app" | head -n 1)
           if [ -z "$APP" ]; then
