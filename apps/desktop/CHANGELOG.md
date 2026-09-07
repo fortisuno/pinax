@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.13
+
+### Patch Changes
+
+- [`497000a`](https://github.com/fortisuno/pinax/commit/497000aebff3430f6caab809d8454630e80e871c) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: update maximum value for criteria quantity schema to 500
+
 ## 0.1.12
 
 ### Patch Changes
