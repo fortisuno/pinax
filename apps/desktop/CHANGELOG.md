@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.12
+
+### Patch Changes
+
+- [`ea23203`](https://github.com/fortisuno/pinax/commit/ea2320308c1a7a632a0bcbcb002c4393463180f0) Thanks [@fortisuno](https://github.com/fortisuno)! - feat: add install script for macOS and update electron-builder configuration
+
 ## 0.1.11
 
 ### Patch Changes
