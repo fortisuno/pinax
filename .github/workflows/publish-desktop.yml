@@ -101,10 +101,17 @@ jobs:
           for v in CSC_LINK CSC_KEY_PASSWORD WIN_CSC_LINK WIN_CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID APPLE_API_KEY APPLE_API_KEY_ID APPLE_API_ISSUER; do
             if [ -z "${!v:-}" ]; then unset "$v"; fi
           done
+          # NOTE: do NOT pass arch flags through the `build` script
+          # (pnpm appends them after `--`, yargs ignores them, and then ONE job
+          # builds BOTH archs concurrently — sharing a /Volumes mount point and
+          # corrupting the DMGs). Compile via `dist`, then invoke
+          # electron-builder directly so each matrix job builds only its arch.
           if [ "${{ matrix.platform }}" = "macos-intel" ]; then
-            pnpm --filter @pinax/desktop build -- --mac --x64
+            pnpm --filter @pinax/desktop dist
+            pnpm --filter @pinax/desktop exec electron-builder --mac --x64
           elif [ "${{ matrix.platform }}" = "macos-arm64" ]; then
-            pnpm --filter @pinax/desktop build -- --mac --arm64
+            pnpm --filter @pinax/desktop dist
+            pnpm --filter @pinax/desktop exec electron-builder --mac --arm64
           else
             pnpm --filter @pinax/desktop build
           fi

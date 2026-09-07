@@ -53,7 +53,12 @@
     }
   },
   "dmg": {
-    "title": "${productName} ${version}",
+    // NOTE: ${arch} is required in the title. electron-builder builds arch
+    // targets concurrently and mounts each DMG at /Volumes/<title>; without
+    // ${arch}, x64+arm64 builds share one mount point and corrupt each other
+    // ("hdiutil detach ... No such file", or a DMG that `hdiutil verify`
+    // rejects as "image not recognized").
+    "title": "${productName}-${version}-${arch}",
     "icon": "public/pinax.icns",
     "iconSize": 96,
     "contents": [
