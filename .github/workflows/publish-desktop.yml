@@ -83,6 +83,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Clean previous release outputs
+        # Self-hosted runners (macos-arm64) persist the workspace between runs
+        # and release/ is gitignored, so stale/corrupt DMGs from earlier runs
+        # would otherwise be picked up by the upload step below.
+        shell: bash
+        run: rm -rf release
+
       - name: Build installers
         shell: bash
         run: |
@@ -123,12 +130,28 @@ jobs:
         if: startsWith(matrix.platform, 'macos-')
         shell: bash
         run: |
-          APP=$(find release/${{ needs.prepare.outputs.version }} -maxdepth 3 -name "*.app" | head -n 1)
+          set -u
+          OUT="release/${{ needs.prepare.outputs.version }}"
+          echo "== DMG integrity (fail-closed: a corrupt DMG must not be released) =="
+          shopt -s nullglob
+          DMGS=("$OUT"/*.dmg)
+          if [ "${#DMGS[@]}" -eq 0 ]; then
+            echo "ERROR: no .dmg produced in $OUT"
+            ls -la "$OUT" || true
+            exit 1
+          fi
+          for DMG in "${DMGS[@]}"; do
+            echo "--- $DMG"
+            du -h "$DMG"
+            shasum -a 256 "$DMG"
+            hdiutil verify "$DMG"
+            # Informational only: ad-hoc builds are NOT expected to pass assessment.
+            spctl -a -vvv --type install "$DMG" || true
+          done
+          echo "== .app signature (informational for ad-hoc builds) =="
+          APP=$(find "$OUT" -maxdepth 3 -name "*.app" | head -n 1)
           if [ -z "$APP" ]; then
-            echo "No .app bundle left in output dir (expected: only DMG/ZIP published). Checking DMG instead."
-            DMG=$(find release/${{ needs.prepare.outputs.version }} -name "*.dmg" | head -n 1)
-            echo "DMG=$DMG"
-            if [ -n "$DMG" ]; then spctl -a -vvv --type install "$DMG" || true; fi
+            echo "No .app bundle left in output dir (only DMG/ZIP published)."
             exit 0
           fi
           echo "APP=$APP"

@@ -3,7 +3,7 @@
 // When no Developer ID certificate is available (local builds / CI without an
 // Apple Developer certificate) electron-builder skips real signing. On Apple
 // Silicon (arm64) that leaves the repackaged bundle unlaunchable, so we apply
-// an ad-hoc signature to make the .app runnable on the build machine.
+// a plain ad-hoc signature to make the .app runnable on the build machine.
 //
 // IMPORTANT: ad-hoc signing (`codesign -s -`) does NOT satisfy Gatekeeper on
 // other Macs. A DMG downloaded from the internet carries a quarantine flag and
@@ -12,9 +12,14 @@
 // stapled by Apple (see scripts/notarize.cjs). That dialog is expected for
 // ad-hoc builds and cannot be fixed from electron-builder config alone.
 //
+// NOTE: deliberately NO `--options runtime` and NO entitlements here.
+// Ad-hoc + Hardened Runtime makes downloaded builds fail Gatekeeper with a
+// "damaged" error instead of the bypassable warning. Keep this plain while
+// there is no paid Developer ID (config `hardenedRuntime` must stay false).
+//
 // This hook therefore:
 // - leaves Developer ID-signed bundles untouched,
-// - force re-signs anything else ad-hoc with Hardened Runtime + entitlements.
+// - force re-signs anything else ad-hoc (plain, no hardened runtime).
 const { execFileSync, execSync } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
@@ -53,17 +58,13 @@ exports.default = async function afterPack(context) {
     return
   }
 
-  const entitlements = resolveEntitlements()
-  const args = ['--force', '--deep', '--options', 'runtime', '--sign', '-']
-  if (entitlements) {
-    args.push('--entitlements', entitlements)
-  }
+  const entitlementsNote = resolveEntitlements()
+    ? ' (entitlements file present but intentionally NOT applied: ad-hoc stays non-hardened)'
+    : ''
+  const args = ['--force', '--deep', '--sign', '-']
   args.push(appPath)
 
-  console.log(
-    `  • ad-hoc sign  file=${appPath}` +
-      (entitlements ? ` entitlements=${entitlements}` : ' (no entitlements file)'),
-  )
+  console.log(`  • ad-hoc sign  file=${appPath}${entitlementsNote}`)
   execFileSync('codesign', args, { stdio: 'inherit' })
   execFileSync(
     'codesign',
