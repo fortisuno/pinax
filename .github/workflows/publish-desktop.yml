@@ -60,8 +60,17 @@ jobs:
           - platform: windows
             os: windows-latest
             arch: x64
+          # NOTE: mac jobs are pinned to macos-26 (Tahoe), NOT the floating
+          # macos-latest. Proven failure mode (v0.1.11): jobs landing on older
+          # images produce DMGs whose own `hdiutil verify` passes, yet modern
+          # macOS rejects them ("unable to open resource fork" 3840 / "image
+          # not recognized") — i.e. runner-side verify is only a valid gate
+          # when the runner runs the same DiskImages generation as users.
+          # If GitHub ever retires the macos-26 label this job fails with a
+          # clear "label not found" error: then move to the next explicit
+          # Tahoe+ label, never back to floating `latest` for releases.
           - platform: macos-intel
-            os: macos-latest
+            os: macos-26
             arch: x64
           # NOTE: arm64 MUST build on a GitHub-hosted runner, not self-hosted.
           # DMGs produced by the old self-hosted toolchain passed `hdiutil
@@ -70,7 +79,7 @@ jobs:
           # of v0.1.9). Hosted images produce DMGs that verify everywhere.
           # Repo is public, so hosted macOS minutes are free.
           - platform: macos-arm64
-            os: macos-latest
+            os: macos-26
             arch: arm64
     runs-on: ${{ matrix.os }}
     steps:

@@ -8,6 +8,7 @@
   "executableName": "pinax",
   "afterPack": "scripts/adhoc-sign.cjs",
   "afterSign": "scripts/notarize.cjs",
+  "afterAllArtifactBuild": "scripts/add-install-script.cjs",
   "directories": {
     "output": "../../release/${version}",
     "buildResources": "build"
