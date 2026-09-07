@@ -8,6 +8,8 @@ const windowsPortable = `${baseUrl}/pinax-Windows-${version}-Portable.zip`;
 
 const macArm64Dmg = `${baseUrl}/pinax-Mac-${version}-arm64.dmg`;
 const macX64Dmg = `${baseUrl}/pinax-Mac-${version}-x64.dmg`;
+const macArm64Zip = `${baseUrl}/pinax-Mac-${version}-arm64.zip`;
+const macX64Zip = `${baseUrl}/pinax-Mac-${version}-x64.zip`;
 
 const linuxAppImage = `${baseUrl}/pinax-Linux-${version}.AppImage`;
 const linuxZip = `${baseUrl}/pinax-Linux-${version}.zip`;
@@ -154,9 +156,35 @@ const linuxZip = `${baseUrl}/pinax-Linux-${version}.zip`;
             <span class="opacity-70">·</span>
             <span class="opacity-90 pinax-mono text-[0.82rem]">≈ 109 MB</span>
           </a>
+          <a
+            href={macArm64Zip}
+            class="inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium border border-border bg-background text-foreground hover:bg-accent transition-colors"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>Apple Silicon (.zip)</span>
+          </a>
+          <a
+            href={macX64Zip}
+            class="inline-flex items-center justify-center gap-3 rounded-md px-6 py-4 pinax-sans text-[1rem] font-medium border border-border bg-background text-foreground hover:bg-accent transition-colors"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v14"></path>
+              <path d="m6 11 6 6 6-6"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>Intel (.zip)</span>
+          </a>
         </div>
         <p class="mt-6 text-center pinax-mono text-[0.78rem] text-muted-foreground">
-          macOS 12+ · .dmg se abre y arrastra a Aplicaciones · Sin firma de pago de Apple: la primera vez macOS muestra un aviso, ver pasos
+          macOS 12+ · .dmg se abre y arrastra a Aplicaciones · .zip como alternativa sin instalador · Sin firma de pago de Apple: la primera vez macOS muestra un aviso, ver pasos
         </p>
         <details class="mx-auto mt-4 max-w-2xl rounded-md border border-border bg-background px-5 py-4 text-left">
           <summary class="cursor-pointer pinax-sans text-[0.9rem] font-medium text-foreground">
