@@ -160,7 +160,7 @@ function UpdateCriteriaForm({
               name: field.name,
               type: "number" as const,
               min: isQuantity ? 1 : 0,
-              max: isQuantity ? 150 : 100,
+              max: isQuantity ? 500 : 100,
               step: isQuantity ? 1 : ("any" as const),
               value: field.state.value,
               onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
