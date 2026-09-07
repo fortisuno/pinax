@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.10
+
+### Patch Changes
+
+- [`bb0c6c1`](https://github.com/fortisuno/pinax/commit/bb0c6c162b20e7f925b63fe9d80ffa5a0ebba541) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: update macOS build configuration to use GitHub-hosted runners for arm64
+
 ## 0.1.9
 
 ### Patch Changes
