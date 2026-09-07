@@ -1,5 +1,13 @@
 # @pinax/landing
 
+## 0.1.4
+
+### Patch Changes
+
+- [`2d71b2c`](https://github.com/fortisuno/pinax/commit/2d71b2c09f54bc7b8b8ab8d4e8d140aebf9f9a37) Thanks [@fortisuno](https://github.com/fortisuno)! - feat: add .zip download options for macOS (Apple Silicon and Intel)
+
+- [`58cbdcd`](https://github.com/fortisuno/pinax/commit/58cbdcd1108e72774bf014ca7ed61724df319d5a) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: update version to 0.1.12 in DownloadCta and Hero components
+
 ## 0.1.3
 
 ### Patch Changes
