@@ -63,8 +63,14 @@ jobs:
           - platform: macos-intel
             os: macos-latest
             arch: x64
+          # NOTE: arm64 MUST build on a GitHub-hosted runner, not self-hosted.
+          # DMGs produced by the old self-hosted toolchain passed `hdiutil
+          # verify` there but are rejected by modern macOS ("unable to open
+          # resource fork", error 3840 — proven with a byte-identical download
+          # of v0.1.9). Hosted images produce DMGs that verify everywhere.
+          # Repo is public, so hosted macOS minutes are free.
           - platform: macos-arm64
-            os: [self-hosted, macOS, ARM64]
+            os: macos-latest
             arch: arm64
     runs-on: ${{ matrix.os }}
     steps:
