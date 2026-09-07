@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.7
+
+### Patch Changes
+
+- [`8bbbb03`](https://github.com/fortisuno/pinax/commit/8bbbb033345f72602ff7c08a1bbac9c60adbf34c) Thanks [@fortisuno](https://github.com/fortisuno)! - Fix windows build pipeline issues
+
 ## 0.1.6
 
 ### Patch Changes
