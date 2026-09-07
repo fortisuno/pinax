@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.5
+
+### Patch Changes
+
+- [`b9d5627`](https://github.com/fortisuno/pinax/commit/b9d56273cdc640f81d075373d33b5670728fbff2) - feat: implement macOS notarization and signing process for desktop app
+
 ## 0.1.4
 
 ### Patch Changes
