@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.9
+
+### Patch Changes
+
+- [`2a09afe`](https://github.com/fortisuno/pinax/commit/2a09afe8e0bb7d64b8876f112abc423d8cba6107) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: update build process for macOS and improve DMG title formatting
+
 ## 0.1.8
 
 ### Patch Changes
