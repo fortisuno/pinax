@@ -7,6 +7,7 @@
   "productName": "pinax",
   "executableName": "pinax",
   "afterPack": "scripts/adhoc-sign.cjs",
+  "afterSign": "scripts/notarize.cjs",
   "directories": {
     "output": "../../release/${version}",
     "buildResources": "build"
@@ -19,7 +20,9 @@
     "category": "public.app-category.education",
     "icon": "public/pinax.icns",
     "darkModeSupport": true,
-    "hardenedRuntime": false,
+    "hardenedRuntime": true,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
     "gatekeeperAssess": false,
     "minimumSystemVersion": "11.0.0",
     "target": [

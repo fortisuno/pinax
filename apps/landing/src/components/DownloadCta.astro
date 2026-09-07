@@ -156,8 +156,39 @@ const linuxZip = `${baseUrl}/pinax-Linux-${version}.zip`;
           </a>
         </div>
         <p class="mt-6 text-center pinax-mono text-[0.78rem] text-muted-foreground">
-          macOS 12+ · .dmg se abre y arrastra a Aplicaciones · Firmado y notarizado
+          macOS 12+ · .dmg se abre y arrastra a Aplicaciones · Sin firma de pago de Apple: la primera vez macOS muestra un aviso, ver pasos
         </p>
+        <details class="mx-auto mt-4 max-w-2xl rounded-md border border-border bg-background px-5 py-4 text-left">
+          <summary class="cursor-pointer pinax-sans text-[0.9rem] font-medium text-foreground">
+            macOS muestra “Apple could not verify…” — cómo abrirlo gratis (30 segundos)
+          </summary>
+          <div class="mt-3 space-y-3 text-[0.9rem] leading-[1.6] text-muted-foreground">
+            <p>
+              Pinax no paga el certificado de Apple (99&nbsp;$/año), así que Gatekeeper avisa la primera vez.
+              La app funciona igual después de abrirla una vez. Elige un método:
+            </p>
+            <ol class="list-decimal space-y-2 pl-5">
+              <li>
+                <strong class="text-foreground">Finder (recomendado):</strong> abre el .dmg, arrastra
+                <span class="pinax-mono text-[0.82rem]">pinax</span> a Aplicaciones. Luego en
+                Finder → Aplicaciones → clic derecho (o Ctrl-clic) en
+                <span class="pinax-mono text-[0.82rem]">pinax</span> → Abrir → Abrir.
+              </li>
+              <li>
+                <strong class="text-foreground">Si ya viste el error:</strong> Ajustes del Sistema →
+                Privacidad y seguridad → junto a “Se bloqueó pinax” pulsa
+                <span class="pinax-mono text-[0.82rem]">Abrir igualmente</span>.
+              </li>
+              <li>
+                <strong class="text-foreground">Terminal:</strong> pega esto y vuelve a abrir la app:
+                <code class="mt-1 block rounded bg-muted px-3 py-2 pinax-mono text-[0.78rem] text-foreground select-all">xattr -cr /Applications/pinax.app</code>
+              </li>
+            </ol>
+            <p class="pinax-mono text-[0.78rem]">
+              El código es público en GitHub: puedes verificarlo o compilarlo tú mismo y ese aviso no aparece.
+            </p>
+          </div>
+        </details>
       </div>
 
       <div id="panel-linux" role="tabpanel" aria-labelledby="tab-linux" class="tab-panel hidden" data-panel="linux">

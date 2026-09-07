@@ -6,13 +6,11 @@ const baseUrl = `https://github.com/fortisuno/pinax/releases/download/v${version
 const repoHref = "https://github.com/fortisuno/pinax";
 
 const linuxAppImage = `${baseUrl}/pinax-Linux-${version}.AppImage`;
-const linuxZip = `${baseUrl}/pinax-Linux-${version}.zip`;
 
 const macArm64Dmg = `${baseUrl}/pinax-Mac-${version}-arm64.dmg`;
 const macX64Dmg = `${baseUrl}/pinax-Mac-${version}-x64.dmg`;
 
 const windowsSetup = `${baseUrl}/pinax-Windows-${version}-Setup.exe`;
-const windowsPortable = `${baseUrl}/pinax-Windows-${version}-Portable.zip`;
 ---
 
 <header
@@ -96,94 +94,40 @@ const windowsPortable = `${baseUrl}/pinax-Windows-${version}-Portable.zip`;
 
     <div
       id="hero-download"
+      data-linux={linuxAppImage}
+      data-mac-arm={macArm64Dmg}
+      data-mac-x64={macX64Dmg}
+      data-windows={windowsSetup}
       class="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-3"
     >
-      <template id="download-linux">
-        <a
-          href={linuxAppImage}
-          class="group inline-flex items-center justify-center gap-3 rounded-md px-7 py-3 pinax-sans text-[0.96rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
-          target="_blank"
-          rel="noopener"
+      <a
+        id="hero-download-link"
+        href={linuxAppImage}
+        data-default-label="Descargar para Linux"
+        class="group inline-flex items-center justify-center gap-3 rounded-md px-7 py-3 pinax-sans text-[0.96rem] font-medium bg-primary text-primary-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] transition-opacity shadow-sm min-h-[3.25rem]"
+        target="_blank"
+        rel="noopener"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3v14"></path>
-            <path d="m6 11 6 6 6-6"></path>
-            <path d="M5 21h14"></path>
-          </svg>
-          <span>Descargar para Linux</span>
-          <span class="opacity-70">·</span>
-          <span class="opacity-90 pinax-mono text-[0.82rem]">.AppImage</span>
-        </a>
-      </template>
-
-      <template id="download-mac">
-        <a
-          href={macArm64Dmg}
-          class="group inline-flex items-center justify-center gap-3 rounded-md px-7 py-3 pinax-sans text-[0.96rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
-          target="_blank"
-          rel="noopener"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3v14"></path>
-            <path d="m6 11 6 6 6-6"></path>
-            <path d="M5 21h14"></path>
-          </svg>
-          <span>Descargar para Mac (Apple Silicon)</span>
-          <span class="opacity-70">·</span>
-          <span class="opacity-90 pinax-mono text-[0.82rem]">.dmg</span>
-        </a>
-      </template>
-
-      <template id="download-windows">
-        <a
-          href={windowsSetup}
-          class="group inline-flex items-center justify-center gap-3 rounded-md px-7 py-3 pinax-sans text-[0.96rem] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
-          target="_blank"
-          rel="noopener"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3v14"></path>
-            <path d="m6 11 6 6 6-6"></path>
-            <path d="M5 21h14"></path>
-          </svg>
-          <span>Descargar para Windows</span>
-          <span class="opacity-70">·</span>
-          <span class="opacity-90 pinax-mono text-[0.82rem]">.exe</span>
-        </a>
-      </template>
+          <path d="M12 3v14"></path>
+          <path d="m6 11 6 6 6-6"></path>
+          <path d="M5 21h14"></path>
+        </svg>
+        <span data-download-label>Descargar para Linux</span>
+        <span class="opacity-70" aria-hidden="true">·</span>
+        <span data-download-format class="opacity-90 pinax-mono text-[0.82rem]">.AppImage</span>
+      </a>
     </div>
 
     <a
@@ -207,58 +151,66 @@ const windowsPortable = `${baseUrl}/pinax-Windows-${version}-Portable.zip`;
       <span>Ver en GitHub</span>
     </a>
 
-    <p class="mt-8 pinax-mono text-[0.78rem] text-muted-foreground">
-      Windows · macOS · Linux · 100% local, sin cuentas
+    <p class="mt-6 pinax-mono text-[0.78rem] text-muted-foreground">
+      ¿Usas otro sistema? <a href="#descargar" class="underline underline-offset-4 hover:text-foreground transition-colors">Ver todas las opciones para Windows, macOS y Linux</a>
+    </p>
+    <p class="mt-2 pinax-mono text-[0.78rem] text-muted-foreground" aria-hidden="true">
+      100% local, sin cuentas
     </p>
   </div>
 
   <script is:inline>
-    function detectOS() {
-      const ua = navigator.userAgent.toLowerCase();
-      const platform = navigator.platform.toLowerCase();
-
-      if (/mac|macintel|macppc|mac68k/i.test(platform)) return 'mac';
-      if (/win32|win64|windows|wow64/i.test(platform)) return 'windows';
-      if (/linux/i.test(platform)) return 'linux';
-      if (/android/i.test(ua)) return 'linux';
-      if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
-      return 'linux';
-    }
-
-    function getMacArch() {
-      const ua = navigator.userAgent.toLowerCase();
-      return /arm64|aarch64/.test(ua) ? 'arm64' : 'x64';
-    }
-
-    function applyDownload() {
-      const os = detectOS();
-      const container = document.getElementById('hero-download');
-      const navLink = document.getElementById('nav-download');
-
-      if (!container) return;
-
-      let templateId = 'download-linux';
-      let navHref = linuxAppImage;
-
-      if (os === 'mac') {
-        templateId = 'download-mac';
-        navHref = macArm64Dmg;
-      } else if (os === 'windows') {
-        templateId = 'download-windows';
-        navHref = windowsSetup;
+    (function () {
+      function detectOS() {
+        var ua = (navigator.userAgent || '').toLowerCase();
+        var platform = (navigator.platform || '').toLowerCase();
+        if (/mac|macintel|macppc|mac68k/i.test(platform)) return 'mac';
+        if (/win32|win64|windows|wow64/i.test(platform)) return 'windows';
+        if (/linux/i.test(platform)) return 'linux';
+        if (/android/i.test(ua)) return 'linux';
+        if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+        return 'linux';
       }
 
-      const template = document.getElementById(templateId);
-      if (template) {
-        container.innerHTML = '';
-        container.appendChild(template.content.cloneNode(true));
+      function applyDownload() {
+        var container = document.getElementById('hero-download');
+        var link = document.getElementById('hero-download-link');
+        var navLink = document.getElementById('nav-download');
+        if (!container || !link) return;
+
+        var os = detectOS();
+        var label = link.querySelector('[data-download-label]');
+        var format = link.querySelector('[data-download-format]');
+
+        var href = container.dataset.linux;
+        var text = 'Descargar para Linux';
+        var ext = '.AppImage';
+
+        if (os === 'mac') {
+          var ua = (navigator.userAgent || '').toLowerCase();
+          var isIntel = /intel|x86_64|x64/.test(ua);
+          href = isIntel ? container.dataset.macX64 : container.dataset.macArm;
+          text = 'Descargar para macOS';
+          ext = '.dmg';
+        } else if (os === 'windows') {
+          href = container.dataset.windows;
+          text = 'Descargar para Windows';
+          ext = '.exe';
+        }
+
+        if (href) {
+          link.href = href;
+          if (navLink) navLink.href = href;
+        }
+        if (label) label.textContent = text;
+        if (format) format.textContent = ext;
       }
 
-      if (navLink) {
-        navLink.href = navHref;
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyDownload);
+      } else {
+        applyDownload();
       }
-    }
-
-    document.addEventListener('DOMContentLoaded', applyDownload);
+    })();
   </script>
 </header>

@@ -93,7 +93,40 @@ jobs:
             pnpm --filter @pinax/desktop build
           fi
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          # Real Developer ID signing + notarization is opt-in: set these repo
+          # secrets and the mac build will be signed, notarized and stapled,
+          # which is the ONLY way to remove the Gatekeeper
+          # "Apple could not verify ... free of malware" dialog.
+          # Without them the build falls back to ad-hoc signing
+          # (scripts/adhoc-sign.cjs) and Gatekeeper will still warn on
+          # downloaded DMGs — expected macOS behavior, not a build bug.
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK == '' && 'false' || 'true' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+
+      - name: Verify macOS signature (mac only)
+        if: startsWith(matrix.platform, 'macos-')
+        run: |
+          APP=$(find release/${{ needs.prepare.outputs.version }} -maxdepth 3 -name "*.app" | head -n 1)
+          if [ -z "$APP" ]; then
+            echo "No .app bundle left in output dir (expected: only DMG/ZIP published). Checking DMG instead."
+            DMG=$(find release/${{ needs.prepare.outputs.version }} -name "*.dmg" | head -n 1)
+            echo "DMG=$DMG"
+            if [ -n "$DMG" ]; then spctl -a -vvv --type install "$DMG" || true; fi
+            exit 0
+          fi
+          echo "APP=$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP" || true
+          # "accepted / Notarized Developer ID" = Gatekeeper clean.
+          # "Unnotarized / ad-hoc" = Gatekeeper WILL warn on download — see env docs above.
+          spctl --assess --verbose --type exec "$APP" || true
+          xcrun stapler validate "$APP" || true
 
       - name: Upload installers
         uses: actions/upload-artifact@v4
