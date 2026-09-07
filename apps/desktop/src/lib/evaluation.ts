@@ -20,7 +20,7 @@ export const criteriaQuantitySchema = numericInputSchema.pipe(
     .number({ error: "Ingresa un número válido" })
     .int("Debe ser un número entero")
     .min(1, "Debe ser al menos 1")
-    .max(150, "Máximo 150")
+    .max(500, "Máximo 500")
 )
 
 export const criteriaPercentageSchema = numericInputSchema.pipe(
