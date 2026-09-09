@@ -1,5 +1,13 @@
 # @pinax/landing
 
+## 0.1.5
+
+### Patch Changes
+
+- [`31e3882`](https://github.com/fortisuno/pinax/commit/31e3882b0a8468fd401c2f7e21861ffb37fa3098) Thanks [@fortisuno](https://github.com/fortisuno)! - fix: update version to 0.1.13 in DownloadCta and Hero components
+
+- [`00142e5`](https://github.com/fortisuno/pinax/commit/00142e5ba8386330370b0152a3d7779e156284a5) Thanks [@fortisuno](https://github.com/fortisuno)! - Test patch for landing page - CI/CD flow validation
+
 ## 0.1.4
 
 ### Patch Changes
