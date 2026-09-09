@@ -1,5 +1,11 @@
 # @pinax/desktop
 
+## 0.1.14
+
+### Patch Changes
+
+- [`00142e5`](https://github.com/fortisuno/pinax/commit/00142e5ba8386330370b0152a3d7779e156284a5) Thanks [@fortisuno](https://github.com/fortisuno)! - Test patch for desktop app - CI/CD flow validation
+
 ## 0.1.13
 
 ### Patch Changes
