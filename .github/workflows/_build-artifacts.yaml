@@ -1,33 +1,47 @@
-name: Publish Release (reusable)
+name: Build Release Artifacts (reusable)
 
 on:
   workflow_call:
     inputs:
-      packages:
-        description: JSON array of package nicknames (e.g. ["pinax-desktop","pinax-landing"])
-        type: string
-        required: true
-      versions-json:
-        description: JSON object mapping nicknames to version strings
+      ref:
+        description: Exact SHA to checkout and build from (never a branch tip)
         type: string
         required: true
       prerelease:
-        description: "Pre-release type: alpha, rc, or empty (official)"
+        description: 'Prerelease kind: "" (official), "alpha", or "rc"'
         type: string
         required: false
         default: ""
-      ref:
-        description: Git ref (SHA) to checkout and build from
+      packages-hint:
+        description: 'JSON array of package nicknames the caller suspects are affected (e.g. ["pinax-desktop","pinax-landing"])'
+        type: string
+        required: false
+        default: '["pinax-desktop","pinax-landing"]'
+      desktop-matrix:
+        description: 'JSON array of desktop matrix rows, e.g. [{"platform":"linux","os":"ubuntu-latest","arch":"x64"}]'
         type: string
         required: true
+      short-sha:
+        description: Short SHA used for the "+<sha7>" suffix of alpha versions
+        type: string
+        required: false
+        default: ""
+    outputs:
+      packages:
+        description: JSON array of package nicknames to release (G5-filtered)
+        value: ${{ jobs.compute.outputs.packages }}
+      versions-json:
+        description: JSON object mapping nicknames to computed version strings
+        value: ${{ jobs.compute.outputs.versions-json }}
       notes-json:
         description: JSON object mapping nicknames to markdown release notes
-        type: string
-        required: true
-      desktop-matrix:
-        description: JSON array of matrix rows for desktop builds (e.g. [{"platform":"linux","os":"ubuntu-latest","arch":"x64"}])
-        type: string
-        required: true
+        value: ${{ jobs.compute.outputs.notes-json }}
+      has-desktop:
+        description: 'true when pinax-desktop is in the release plan'
+        value: ${{ jobs.compute.outputs.has-desktop }}
+      has-landing:
+        description: 'true when pinax-landing is in the release plan'
+        value: ${{ jobs.compute.outputs.has-landing }}
     secrets:
       CSC_LINK:
         description: Apple Developer certificate (.p12) used for notarized signing
@@ -55,10 +69,10 @@ on:
         required: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  prepare:
+  compute:
     name: Compute release plan
     runs-on: ubuntu-latest
     outputs:
@@ -74,51 +88,146 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        # Only prerelease kinds need @changesets/cli; official reads package.json only.
+        if: inputs.prerelease != ''
+        run: pnpm install --frozen-lockfile
 
       - name: Compute release plan
         id: compute
         env:
-          PACKAGES: ${{ inputs.packages }}
-          VERSIONS_JSON: ${{ inputs.versions-json }}
-          NOTES_JSON: ${{ inputs.notes-json }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          PACKAGES_HINT: ${{ inputs.packages-hint }}
+          SHORT_SHA: ${{ inputs.short-sha }}
         run: |
+          if [ "$PRERELEASE" != "" ]; then
+            trap 'rm -f cs.tmp.json' EXIT
+            pnpm exec changeset status --output=cs.tmp.json || true
+          fi
           node -e "
             const fs = require('fs');
             const { execSync } = require('child_process');
-            const packages = JSON.parse(process.env.PACKAGES);
-            const versions = JSON.parse(process.env.VERSIONS_JSON);
-            const notes = JSON.parse(process.env.NOTES_JSON);
 
+            const prerelease = process.env.PRERELEASE || '';
+            const hint = new Set(JSON.parse(process.env.PACKAGES_HINT || '[]'));
+            const nicknames = { '@pinax/desktop': 'pinax-desktop', '@pinax/landing': 'pinax-landing' };
+            const candidates = { 'pinax-desktop': './apps/desktop', 'pinax-landing': './apps/landing' };
+
+            const packages = [];
+            const versions = {};
+            const notes = {};
+
+            if (prerelease === 'alpha' || prerelease === 'rc') {
+              // Central version computation: target next version from changeset
+              // status, counter N from existing tags, full version per kind.
+              let status = { changesets: [], releases: [] };
+              if (fs.existsSync('cs.tmp.json')) {
+                try { status = JSON.parse(fs.readFileSync('cs.tmp.json', 'utf8')); } catch {}
+              }
+              const shortSha = process.env.SHORT_SHA || '';
+
+              for (const r of status.releases || []) {
+                if (r.type === 'none') continue;
+                const nick = nicknames[r.name];
+                if (!nick || !hint.has(nick)) continue;
+                const base = r.newVersion;
+
+                let max = 0;
+                try {
+                  const tags = execSync('git tag -l \"' + nick + '@' + base + '-' + prerelease + '.*\"', { encoding: 'utf8' });
+                  for (const line of tags.split('\n')) {
+                    // Regex literals on purpose: string-built regexes would
+                    // collapse \d / \. through JS string unescaping.
+                    const match = prerelease === 'alpha'
+                      ? line.match(/-alpha\.(\d+)\+/)
+                      : line.match(/-rc\.(\d+)$/);
+                    if (match) max = Math.max(max, Number(match[1]));
+                  }
+                } catch {}
+
+                const n = max + 1;
+                const full = prerelease === 'alpha'
+                  ? base + '-alpha.' + n + '+' + shortSha
+                  : base + '-rc.' + n;
+
+                packages.push(nick);
+                versions[nick] = full;
+
+                const summaries = (r.changesets || []).map(id => {
+                  const c = (status.changesets || []).find(x => x.id === id);
+                  return c ? '- ' + c.summary : '';
+                }).filter(Boolean).join('\n');
+
+                notes[nick] = [
+                  '**Bump:** ' + r.type,
+                  '**Package:** \`' + r.name + '\`',
+                  '**Version:** \`' + full + '\`',
+                  '',
+                  '### Changes',
+                  summaries || '_No summary provided_'
+                ].join('\n');
+              }
+            } else {
+              // Official: versions come from the already-bumped package.json at the ref.
+              for (const [pkg, dir] of Object.entries(candidates)) {
+                if (!hint.has(pkg)) continue;
+                if (!fs.existsSync(dir + '/package.json')) continue;
+
+                const ver = JSON.parse(fs.readFileSync(dir + '/package.json', 'utf8')).version;
+                if (ver === '0.0.0') {
+                  console.log('Initial placeholder version for ' + pkg + ', nothing to release');
+                  continue;
+                }
+
+                packages.push(pkg);
+                versions[pkg] = ver;
+
+                // Extract the <version> section from the package changelog (G4 notes).
+                let note = 'Release ' + ver;
+                try {
+                  const changelog = fs.readFileSync(dir + '/CHANGELOG.md', 'utf8');
+                  const marker = '## ' + ver;
+                  const start = changelog.indexOf(marker);
+                  if (start !== -1) {
+                    const bodyStart = start + marker.length;
+                    const next = changelog.indexOf('\n## ', bodyStart);
+                    note = (next === -1 ? changelog.slice(bodyStart) : changelog.slice(bodyStart, next)).trim() || note;
+                  }
+                } catch {}
+                notes[pkg] = note;
+              }
+            }
+
+            // G5 (all kinds): drop packages whose release tag already exists.
             const toRelease = [];
             const filteredVersions = {};
             const filteredNotes = {};
-            let hasDesktop = false;
-            let hasLanding = false;
-
             for (const pkg of packages) {
               const ver = versions[pkg];
               const tag = pkg + '@' + ver;
-
               try {
                 execSync('git rev-parse -q --verify refs/tags/' + tag, { stdio: 'pipe' });
                 console.log('G5 skip: tag ' + tag + ' already exists');
                 continue;
               } catch {}
-
               toRelease.push(pkg);
               filteredVersions[pkg] = ver;
               filteredNotes[pkg] = notes[pkg] || 'Release ' + tag;
-              if (pkg.includes('desktop')) hasDesktop = true;
-              if (pkg.includes('landing')) hasLanding = true;
             }
 
-            if (toRelease.length === 0) {
-              console.log('All tags exist — nothing to release');
-            }
+            const hasDesktop = toRelease.includes('pinax-desktop');
+            const hasLanding = toRelease.includes('pinax-landing');
+            console.log('Release plan: ' + JSON.stringify(toRelease));
+            if (toRelease.length === 0) console.log('Nothing to release');
 
             const append = (k, v) => fs.appendFileSync(process.env.GITHUB_OUTPUT, k + '=' + v + '\n');
             append('packages', JSON.stringify(toRelease));
@@ -130,8 +239,8 @@ jobs:
 
   build-desktop:
     name: Build desktop (${{ matrix.platform }})
-    needs: prepare
-    if: needs.prepare.outputs.has-desktop == 'true'
+    needs: compute
+    if: needs.compute.outputs.has-desktop == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -158,7 +267,7 @@ jobs:
       - name: Get version
         id: version
         env:
-          VERSIONS_JSON: ${{ needs.prepare.outputs.versions-json }}
+          VERSIONS_JSON: ${{ needs.compute.outputs.versions-json }}
         run: |
           VERSION=$(node -p "JSON.parse(process.env.VERSIONS_JSON)['pinax-desktop']")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -242,8 +351,8 @@ jobs:
 
   build-landing:
     name: Build landing
-    needs: prepare
-    if: needs.prepare.outputs.has-landing == 'true'
+    needs: compute
+    if: needs.compute.outputs.has-landing == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -266,7 +375,7 @@ jobs:
       - name: Get version
         id: version
         env:
-          VERSIONS_JSON: ${{ needs.prepare.outputs.versions-json }}
+          VERSIONS_JSON: ${{ needs.compute.outputs.versions-json }}
         run: |
           VERSION=$(node -p "JSON.parse(process.env.VERSIONS_JSON)['pinax-landing']")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -285,98 +394,3 @@ jobs:
           name: landing-zip
           path: pinax-landing-${{ steps.version.outputs.version }}.zip
           if-no-files-found: error
-
-  publish:
-    name: Create GitHub Releases
-    needs: [prepare, build-desktop, build-landing]
-    if: ${{ !cancelled() && (needs.build-desktop.result == 'success' || needs.build-landing.result == 'success') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Download installers
-        if: needs.prepare.outputs.has-desktop == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          pattern: installers-*
-          path: artifacts
-          merge-multiple: true
-
-      - name: Flatten installers
-        if: needs.prepare.outputs.has-desktop == 'true'
-        run: |
-          mkdir -p installers
-          find artifacts -type f -exec mv {} installers/ \;
-          find artifacts -mindepth 1 -type d -empty -delete
-
-      - name: Download landing zip
-        if: needs.prepare.outputs.has-landing == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: landing-zip
-          path: .
-
-      - name: Create GitHub Releases
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PACKAGES: ${{ needs.prepare.outputs.packages }}
-          VERSIONS_JSON: ${{ needs.prepare.outputs.versions-json }}
-          NOTES_JSON: ${{ needs.prepare.outputs.notes-json }}
-          PRERELEASE: ${{ inputs.prerelease }}
-          HAS_DESKTOP: ${{ needs.prepare.outputs.has-desktop }}
-          HAS_LANDING: ${{ needs.prepare.outputs.has-landing }}
-        run: |
-          node -e "
-            const fs = require('fs');
-            const { execSync } = require('child_process');
-            const packages = JSON.parse(process.env.PACKAGES);
-            const versions = JSON.parse(process.env.VERSIONS_JSON);
-            const notes = JSON.parse(process.env.NOTES_JSON);
-            const prerelease = process.env.PRERELEASE;
-            const hasDesktop = process.env.HAS_DESKTOP === 'true';
-            const hasLanding = process.env.HAS_LANDING === 'true';
-
-            for (const pkg of packages) {
-              const ver = versions[pkg];
-              const tag = pkg + '@' + ver;
-              const notesFile = '.release-notes-' + pkg.replace('/', '-') + '.md';
-              const isDesktop = pkg.includes('desktop');
-
-              // G5: double-check tag (safety net)
-              try {
-                execSync('git rev-parse -q --verify refs/tags/' + tag, { stdio: 'pipe' });
-                console.log('G5 skip: ' + tag);
-                continue;
-              } catch {}
-
-              fs.writeFileSync(notesFile, notes[pkg] || 'Release ' + tag);
-
-              const prereleaseFlag = prerelease ? '--prerelease' : '';
-              const assets = [];
-
-              if (isDesktop && hasDesktop) {
-                const installers = fs.readdirSync('installers').map(f => 'installers/' + f);
-                assets.push(...installers);
-              }
-
-              if (!isDesktop && hasLanding) {
-                const zipFiles = fs.readdirSync('.').filter(f => f.startsWith('pinax-landing-') && f.endsWith('.zip'));
-                assets.push(...zipFiles);
-              }
-
-              const cmd = ['gh', 'release', 'create', tag, '--title', tag, '--notes-file', notesFile];
-              if (prereleaseFlag) cmd.push(prereleaseFlag);
-              cmd.push(...assets);
-
-              console.log('Creating release: ' + tag);
-              execSync(cmd.join(' '), { stdio: 'inherit' });
-            }
-          "

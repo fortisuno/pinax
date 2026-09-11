@@ -1,4 +1,4 @@
-name: CI
+name: Check Landing Lint
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - main
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: lint-build-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

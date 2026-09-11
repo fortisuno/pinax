@@ -1,0 +1,117 @@
+name: Trigger Prerelease
+
+on:
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: prerelease-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+
+jobs:
+  parse:
+    name: Parse command and authorize
+    if: github.event.issue.pull_request != ''
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.parse.outputs.ref }}
+      short-sha: ${{ steps.parse.outputs.short-sha }}
+      desktop-matrix: ${{ steps.parse.outputs.desktop-matrix }}
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Parse /prerelease and authorize
+        id: parse
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -u
+
+          # Read the raw comment body via the API (avoids untrusted interpolation).
+          COMMENT_JSON=$(gh api "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}")
+          BODY=$(echo "$COMMENT_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).body")
+
+          read -r CMD OS_ARG <<< "$BODY"
+          if [ "$CMD" != "/prerelease" ]; then
+            echo "Not a /prerelease command - ignoring."
+            exit 0
+          fi
+
+          # G2: only the PR author or maintainers may trigger a prerelease.
+          PR_AUTHOR="${{ github.event.issue.user.login }}"
+          COMMENT_AUTHOR="${{ github.event.comment.user.login }}"
+          ASSOCIATION="${{ github.event.comment.author_association }}"
+          if [ "$COMMENT_AUTHOR" = "$PR_AUTHOR" ] || [[ "$ASSOCIATION" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; then
+            echo "Authorized: $COMMENT_AUTHOR ($ASSOCIATION)"
+          else
+            echo "::error::Only the PR author or repository maintainers can trigger a prerelease."
+            exit 1
+          fi
+
+          # G2: PR must be open, unmerged and not a fork (fork head SHAs are not fetchable here).
+          PR_JSON=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER")
+          STATE=$(echo "$PR_JSON" | node -p "const p=JSON.parse(require('fs').readFileSync(0,'utf8')); p.state+' '+(p.merged?'true':'false')")
+          if [[ "$STATE" != "open false" ]]; then
+            echo "::error::Prerelease requires an open, unmerged PR."
+            exit 1
+          fi
+          IS_FORK=$(echo "$PR_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).head.repo.fork")
+          if [ "$IS_FORK" = "true" ]; then
+            echo "::error::Prerelease is not available for fork PRs."
+            exit 1
+          fi
+
+          HEAD_SHA=$(echo "$PR_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).head.sha")
+          echo "ref=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "short-sha=${HEAD_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "Ref pinned to $HEAD_SHA"
+
+          # Desktop matrix scope depends on the /prerelease OS argument.
+          OS_ARG_LOWER=$(echo "$OS_ARG" | tr '[:upper:]' '[:lower:]')
+          case "$OS_ARG_LOWER" in
+            win11|windows)
+              MATRIX='[{"platform":"windows","os":"windows-latest","arch":"x64"}]' ;;
+            linux)
+              MATRIX='[{"platform":"linux","os":"ubuntu-latest","arch":"x64"}]' ;;
+            mac|macos|darwin)
+              MATRIX='[{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]' ;;
+            *)
+              MATRIX='[{"platform":"linux","os":"ubuntu-latest","arch":"x64"},{"platform":"windows","os":"windows-latest","arch":"x64"},{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]' ;;
+          esac
+          echo "desktop-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "Desktop matrix: $MATRIX"
+
+  build:
+    name: Build alpha artifacts
+    needs: parse
+    if: needs.parse.outputs.ref != ''
+    uses: ./.github/workflows/_build-artifacts.yaml
+    with:
+      ref: ${{ needs.parse.outputs.ref }}
+      prerelease: alpha
+      short-sha: ${{ needs.parse.outputs.short-sha }}
+      packages-hint: '["pinax-desktop","pinax-landing"]'
+      desktop-matrix: ${{ needs.parse.outputs.desktop-matrix }}
+    secrets: inherit
+
+  publish:
+    name: Publish alpha releases
+    needs: [parse, build]
+    if: needs.build.outputs.packages != '[]'
+    uses: ./.github/workflows/_publish-release.yaml
+    with:
+      ref: ${{ needs.parse.outputs.ref }}
+      packages: ${{ needs.build.outputs.packages }}
+      versions-json: ${{ needs.build.outputs.versions-json }}
+      notes-json: ${{ needs.build.outputs.notes-json }}
+      prerelease: alpha
+    secrets: inherit

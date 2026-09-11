@@ -1,4 +1,4 @@
-name: Publish Official Release
+name: Trigger Official Release
 
 on:
   pull_request:
@@ -23,11 +23,7 @@ jobs:
       github.event.pull_request.title == 'Version Packages'
     outputs:
       packages: ${{ steps.compute.outputs.packages }}
-      versions-json: ${{ steps.compute.outputs.versions-json }}
-      notes-json: ${{ steps.compute.outputs.notes-json }}
-      has-desktop: ${{ steps.compute.outputs.has-desktop }}
-      has-landing: ${{ steps.compute.outputs.has-landing }}
-      desktop-matrix: ${{ steps.compute.outputs.desktop-matrix }}
+      ref: ${{ steps.compute.outputs.ref }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,7 +36,7 @@ jobs:
         with:
           node-version: 24
 
-      - name: Compute released packages and notes
+      - name: Compute released packages
         id: compute
         run: |
           node -e "
@@ -48,8 +44,6 @@ jobs:
             const { execSync } = require('child_process');
             const candidates = { 'pinax-desktop': './apps/desktop', 'pinax-landing': './apps/landing' };
             const packages = [];
-            const versions = {};
-            const notes = {};
 
             for (const [pkg, dir] of Object.entries(candidates)) {
               if (!fs.existsSync(dir + '/package.json')) continue;
@@ -67,47 +61,35 @@ jobs:
               } catch {}
 
               packages.push(pkg);
-              versions[pkg] = ver;
-
-              // Extract the <version> section from the package changelog (G4 notes)
-              let n = 'Release ' + ver;
-              try {
-                const changelog = fs.readFileSync(dir + '/CHANGELOG.md', 'utf8');
-                const marker = '## ' + ver;
-                const start = changelog.indexOf(marker);
-                if (start !== -1) {
-                  const bodyStart = start + marker.length;
-                  const next = changelog.indexOf('\n## ', bodyStart);
-                  n = (next === -1 ? changelog.slice(bodyStart) : changelog.slice(bodyStart, next)).trim() || n;
-                }
-              } catch {}
-              notes[pkg] = n;
             }
 
             const append = (k, v) => fs.appendFileSync(process.env.GITHUB_OUTPUT, k + '=' + v + '\n');
             append('packages', JSON.stringify(packages));
-            append('versions-json', JSON.stringify(versions));
-            append('notes-json', JSON.stringify(notes));
-            append('has-desktop', packages.includes('pinax-desktop') ? 'true' : 'false');
-            append('has-landing', packages.includes('pinax-landing') ? 'true' : 'false');
-            append('desktop-matrix', JSON.stringify([
-              { platform: 'linux', os: 'ubuntu-latest', arch: 'x64' },
-              { platform: 'windows', os: 'windows-latest', arch: 'x64' },
-              { platform: 'macos-intel', os: 'macos-26', arch: 'x64' },
-              { platform: 'macos-arm64', os: 'macos-26', arch: 'arm64' }
-            ]));
           "
+          echo "ref=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build official artifacts
+    needs: prepare
+    if: needs.prepare.outputs.packages != '[]'
+    uses: ./.github/workflows/_build-artifacts.yaml
+    with:
+      ref: ${{ needs.prepare.outputs.ref }}
+      prerelease: ""
+      packages-hint: ${{ needs.prepare.outputs.packages }}
+      desktop-matrix: |
+        [{"platform":"linux","os":"ubuntu-latest","arch":"x64"},{"platform":"windows","os":"windows-latest","arch":"x64"},{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]
+    secrets: inherit
 
   release:
     name: Publish official releases
-    needs: prepare
-    if: needs.prepare.outputs.packages != '[]'
-    uses: ./.github/workflows/publish-release.yml
+    needs: [prepare, build]
+    if: needs.build.outputs.packages != '[]'
+    uses: ./.github/workflows/_publish-release.yaml
     with:
-      packages: ${{ needs.prepare.outputs.packages }}
-      versions-json: ${{ needs.prepare.outputs.versions-json }}
+      ref: ${{ needs.prepare.outputs.ref }}
+      packages: ${{ needs.build.outputs.packages }}
+      versions-json: ${{ needs.build.outputs.versions-json }}
+      notes-json: ${{ needs.build.outputs.notes-json }}
       prerelease: ""
-      ref: ${{ github.event.pull_request.merge_commit_sha }}
-      notes-json: ${{ needs.prepare.outputs.notes-json }}
-      desktop-matrix: ${{ needs.prepare.outputs.desktop-matrix }}
     secrets: inherit

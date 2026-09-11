@@ -1,0 +1,82 @@
+name: Trigger RC Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: rc-${{ github.ref }}
+  cancel-in-progress: false
+
+# contents: write = RC releases (publish job) + changesets/action pushing to
+# changeset-release/main; pull-requests: write = changesets/action PR.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  publish-rc:
+    name: Build RC artifacts
+    # G3': skip commits authored by changesets/action (rebase/squash merges keep
+    # the "Version Packages" commit/PR title; "Release " covers legacy naming).
+    if: |
+      !startsWith(github.event.head_commit.message, 'Version Packages') &&
+      !startsWith(github.event.head_commit.message, 'Release ')
+    uses: ./.github/workflows/_build-artifacts.yaml
+    with:
+      ref: ${{ github.sha }}
+      prerelease: rc
+      packages-hint: '["pinax-desktop","pinax-landing"]'
+      desktop-matrix: |
+        [{"platform":"linux","os":"ubuntu-latest","arch":"x64"},{"platform":"windows","os":"windows-latest","arch":"x64"},{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]
+    secrets: inherit
+
+  release-rc:
+    name: Publish RC releases
+    needs: publish-rc
+    if: needs.publish-rc.outputs.packages != '[]'
+    uses: ./.github/workflows/_publish-release.yaml
+    with:
+      ref: ${{ github.sha }}
+      packages: ${{ needs.publish-rc.outputs.packages }}
+      versions-json: ${{ needs.publish-rc.outputs.versions-json }}
+      notes-json: ${{ needs.publish-rc.outputs.notes-json }}
+      prerelease: rc
+    secrets: inherit
+
+  create-release-pr:
+    name: Create Version Packages PR
+    # Same G3' guard as publish-rc: never re-run on its own merges.
+    if: |
+      !startsWith(github.event.head_commit.message, 'Version Packages') &&
+      !startsWith(github.event.head_commit.message, 'Release ')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Version Packages Pull Request
+        # No `title` input -> changesets/action uses its default "Version Packages".
+        # The action bumps versions, updates CHANGELOGs and deletes used
+        # changesets on the changeset-release/main branch, then opens/updates the
+        # official release PR. Merging that PR triggers trigger-release.yaml.
+        uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

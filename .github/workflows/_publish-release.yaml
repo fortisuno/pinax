@@ -1,0 +1,119 @@
+name: Publish Release (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Exact SHA the release assets were built from (tag checks resolve against this checkout)
+        type: string
+        required: true
+      packages:
+        description: JSON array of package nicknames to release
+        type: string
+        required: true
+      versions-json:
+        description: JSON object mapping nicknames to version strings
+        type: string
+        required: true
+      notes-json:
+        description: JSON object mapping nicknames to markdown release notes
+        type: string
+        required: true
+      prerelease:
+        description: 'Prerelease kind: "" (official), "alpha", or "rc"'
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Create GitHub Releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Download installers
+        # Artifacts are run-scoped; the caller runs _build-artifacts then this
+        # reusable within the same run, so the installers-* artifacts exist here.
+        if: contains(fromJSON(inputs.packages), 'pinax-desktop')
+        uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Flatten installers
+        if: contains(fromJSON(inputs.packages), 'pinax-desktop')
+        run: |
+          mkdir -p installers
+          find artifacts -type f -exec mv {} installers/ \;
+          find artifacts -mindepth 1 -type d -empty -delete
+
+      - name: Download landing zip
+        if: contains(fromJSON(inputs.packages), 'pinax-landing')
+        uses: actions/download-artifact@v4
+        with:
+          name: landing-zip
+          path: .
+
+      - name: Create GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES: ${{ inputs.packages }}
+          VERSIONS_JSON: ${{ inputs.versions-json }}
+          NOTES_JSON: ${{ inputs.notes-json }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+            const packages = JSON.parse(process.env.PACKAGES);
+            const versions = JSON.parse(process.env.VERSIONS_JSON);
+            const notes = JSON.parse(process.env.NOTES_JSON);
+            const prerelease = process.env.PRERELEASE;
+
+            for (const pkg of packages) {
+              const ver = versions[pkg];
+              const tag = pkg + '@' + ver;
+              const notesFile = '.release-notes-' + pkg.replace('/', '-') + '.md';
+              const isDesktop = pkg.includes('desktop');
+
+              // G5: double-check tag (safety net; compute already filtered).
+              try {
+                execSync('git rev-parse -q --verify refs/tags/' + tag, { stdio: 'pipe' });
+                console.log('G5 skip: ' + tag);
+                continue;
+              } catch {}
+
+              fs.writeFileSync(notesFile, notes[pkg] || 'Release ' + tag);
+
+              const assets = [];
+              if (isDesktop) {
+                if (fs.existsSync('installers')) {
+                  assets.push(...fs.readdirSync('installers').map(f => 'installers/' + f));
+                }
+              } else {
+                const zipFiles = fs.readdirSync('.').filter(f => f.startsWith('pinax-landing-') && f.endsWith('.zip'));
+                assets.push(...zipFiles);
+              }
+
+              const cmd = ['gh', 'release', 'create', tag, '--title', tag, '--notes-file', notesFile];
+              if (prerelease) cmd.push('--prerelease');
+              cmd.push(...assets);
+
+              console.log('Creating release: ' + tag);
+              execSync(cmd.join(' '), { stdio: 'inherit' });
+            }
+          "

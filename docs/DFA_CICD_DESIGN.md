@@ -2,7 +2,9 @@
 
 This document is the single source of truth for the release pipeline. Every
 workflow in `.github/workflows/` implements one state or transition described
-here. Modeled as a **Deterministic Finite Automaton (DFA)**.
+here (reusable `_build-artifacts.yaml` / `_publish-release.yaml` implement the
+shared publish build/release mechanics behind transitions 3, 5, 6 and 8).
+Modeled as a **Deterministic Finite Automaton (DFA)**.
 
 ## Formal definition
 
@@ -86,14 +88,14 @@ flowchart LR
 
 | # | From | Event / guard | To | Actions (workflow) |
 |---|---|---|---|---|
-| 1 | `A⊥` | `e_fix`: commit adds ≥1 `.changeset/*.md` (excl. `config.json`, `README.md`, `commit.mjs`) | `A` | `changeset-required.yml` → check passes |
-| 2 | `A` | `e_break`: commit removes all changesets | `A⊥` | `changeset-required.yml` → check fails (merge blocked) |
-| 3 | `A` | `e_prerelease` + **G2**: PR open ∧ not merged ∧ commenter is PR author or OWNER/MEMBER/COLLABORATOR ∧ `changeset-required` satisfied | `B` | `prerelease.yml` → `publish-release.yml` (`alpha`) |
-| 4 | `B` | `e_again`: another valid `/prerelease` (new N, or G5 skip if tag exists) | `B` | `prerelease.yml` (idempotent recompute) |
-| 5 | `A` / `B` | `e_merge` + **G3**: PR closed ∧ merged ∧ base `main` ∧ head ≠ `changeset-release/main` | `C` | `release-candidates.yml` (rc.N per affected pkg) ‖ `release.yml` (changesets/action creates/updates "Version Packages" PR) |
-| 6 | `C` | `e_new_changesets` + **G3′**: push to `main`, head commit does NOT start with `Version Packages` | `C` | `release-candidates.yml` (rc.N+1) ‖ `release.yml` (action updates PR) |
+| 1 | `A⊥` | `e_fix`: commit adds ≥1 `.changeset/*.md` (excl. `config.json`, `README.md`, `commit.mjs`) | `A` | `check-changesets-exists.yaml` → check passes |
+| 2 | `A` | `e_break`: commit removes all changesets | `A⊥` | `check-changesets-exists.yaml` → check fails (merge blocked) |
+| 3 | `A` | `e_prerelease` + **G2**: PR open ∧ not merged ∧ commenter is PR author or OWNER/MEMBER/COLLABORATOR ∧ `changeset-required` satisfied | `B` | `trigger-prerelease.yaml` → `_build-artifacts.yaml` + `_publish-release.yaml` (`alpha`) |
+| 4 | `B` | `e_again`: another valid `/prerelease` (new N, or G5 skip if tag exists) | `B` | `trigger-prerelease.yaml` (idempotent recompute via `_build-artifacts.yaml`) |
+| 5 | `A` / `B` | `e_merge` + **G3**: PR closed ∧ merged ∧ base `main` ∧ head ≠ `changeset-release/main` | `C` | `trigger-rc.yaml` (rc.N per affected pkg via reusables ‖ changesets/action creates/updates "Version Packages" PR) |
+| 6 | `C` | `e_new_changesets` + **G3′**: push to `main`, head commit does NOT start with `Version Packages` | `C` | `trigger-rc.yaml` (rc.N+1 via reusables ‖ action updates PR) |
 | 7 | `C` | `e_releasePR_unmerged`: "Version Packages" PR closed, not merged | `C` | no-op; next merge re-creates it |
-| 8 | `C` | `e_releasePR_merged` + **G4**: PR merged ∧ base `main` ∧ head `changeset-release/main` ∧ title `Version Packages` | `D` | `publish-official.yml` → `publish-release.yml` (`official`) |
+| 8 | `C` | `e_releasePR_merged` + **G4**: PR merged ∧ base `main` ∧ head `changeset-release/main` ∧ title `Version Packages` | `D` | `trigger-release.yaml` → `_build-artifacts.yaml` + `_publish-release.yaml` (`official`) |
 | 9 | any publish | `e_tag_exists` + **G5**: tag `pinax-desktop@<V>` / `pinax-landing@<V>` already exists | — | idempotent skip (every caller + publish step) |
 
 ## Guards
@@ -108,7 +110,10 @@ flowchart LR
 
 ## Version scheme
 
-Versions are computed **per package** from `changeset status`. `package.json` is
+Versions are computed **per package** from `changeset status` (alpha/rc) or the
+already-bumped `package.json` (official), **centrally inside
+`_build-artifacts.yaml`** — trigger workflows only pass an exact `ref`, a
+`packages-hint`, the prerelease kind and the desktop matrix. `package.json` is
 never bumped by the pipeline itself — only `changesets/action` bumps it (on its
 own `changeset-release/main` branch, then merged to `main` via the official PR).
 
@@ -141,13 +146,14 @@ Prerelease and RC releases are created with `--prerelease`.
 
 | Workflow | Implements |
 |---|---|
-| `changeset-required.yml` | transitions 1–2 (required check `changeset-required`) |
-| `ci.yml` | required check `lint-build` (lint, desktop tsc+vite, landing build) |
-| `prerelease.yml` | transitions 3–4 (G2) |
-| `release-candidates.yml` | transition 5/6 left half (rc publish, G3/G3′, G5) |
-| `release.yml` | transition 5/6 right half (changesets/action → "Version Packages" PR, G3′) |
-| `publish-official.yml` | transition 8 (G4, G5) |
-| `publish-release.yml` | reusable `workflow_call` — build + assets + `gh release create` for all kinds |
+| `check-changesets-exists.yaml` | transitions 1–2 (required check `changeset-required`) |
+| `check-landing-lint.yaml` | required check `lint-build` (lint, desktop tsc+vite, landing build) |
+| `trigger-prerelease.yaml` | transitions 3–4 (G2); calls `_build-artifacts.yaml` (`alpha`) → `_publish-release.yaml` |
+| `trigger-rc.yaml` | transitions 5–6 (rc publish via reusables ‖ changesets/action → "Version Packages" PR, G3′); calls `_build-artifacts.yaml` (`rc`) → `_publish-release.yaml` |
+| `trigger-release.yaml` | transition 8 (G4); calls `_build-artifacts.yaml` (`official`) → `_publish-release.yaml` |
+| `_build-artifacts.yaml` | reusable `workflow_call` — central version computation (alpha/rc/official), G5 filtering, asset builds + artifact uploads (desktop matrix, landing zip) |
+| `_publish-release.yaml` | reusable `workflow_call` — artifact downloads + `gh release create` for all kinds |
+| `deploy-landing.yaml` | manual GitHub Pages deploy of a tagged snapshot (`workflow_dispatch`, required `tag` input) |
 
 ## Branch protection (manual GitHub settings)
 
@@ -159,7 +165,7 @@ Prerelease and RC releases are created with `--prerelease`.
   to date" = **off** (changesets/action keeps the official PR updated itself).
 - Do not allow force pushes / deletions.
 - Require conversation resolution = on.
-- GitHub Pages source = GitHub Actions (for `deploy-landing.yml`).
+- GitHub Pages source = GitHub Actions (for `deploy-landing.yaml`).
 
 The `changeset-required` check exempts the "Version Packages" PR by **running and
 passing** on `changeset-release/main` — never by skipping (a skipped job does not

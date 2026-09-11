@@ -1,4 +1,4 @@
-name: Changeset Required
+name: Check Changesets Exists
 
 on:
   pull_request:

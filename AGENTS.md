@@ -25,13 +25,17 @@ repo: verification is `pnpm lint` + typecheck/build.
 ## Release pipeline
 
 See `docs/DFA_CICD_DESIGN.md` (design/DFA source of truth) and the workflows in
-`.github/workflows/`:
+`.github/workflows/` (`check-changesets-exists.yaml`, `check-landing-lint.yaml`,
+`trigger-prerelease.yaml`, `trigger-rc.yaml`, `trigger-release.yaml`,
+`deploy-landing.yaml`, plus reusables `_build-artifacts.yaml` +
+`_publish-release.yaml`; note the `.yaml` extension and `_` prefix for reusable
+workflows):
 
-- `/prerelease [win11|linux|mac]` comment on a PR → alpha release. Optional OS arg scopes the desktop matrix; omitted = all 4. Version `X.Y.Z-alpha.N+<sha7>` (N = max existing tag counter + 1).
-- Merge feature PR → RC release `X.Y.Z-rc.N` + "Version Packages" PR (changesets/action creates/updates it).
-- Merge "Version Packages" PR → official releases `X.Y.Z` per changed package.
+- `/prerelease [win11|linux|mac]` comment on a PR → alpha release (`trigger-prerelease.yaml`). Optional OS arg scopes the desktop matrix; omitted = all 4. Version `X.Y.Z-alpha.N+<sha7>` (N = max existing tag counter + 1).
+- Merge feature PR → RC release `X.Y.Z-rc.N` + "Version Packages" PR (`trigger-rc.yaml`: rc publish via reusables ‖ changesets/action creates/updates the PR).
+- Merge "Version Packages" PR → official releases `X.Y.Z` per changed package (`trigger-release.yaml`).
 - Release **tags are named `pinax-desktop@<V>` / `pinax-landing@<V>`**, not `v<V>` (legacy `v0.1.x` tags are history). One release per changed package; `pinax-landing@<V>` ships `pinax-landing-<V>.zip`, `pinax-desktop@<V>` ships installers for all 3 OS.
-- Versions are computed from `changeset status` (target next version), never from the working tree; package.json is left untouched on `main`/feature branches. All builds pin an exact SHA (`github.sha`, PR head sha, `merge_commit_sha`) — never branch tips.
+- Versions are computed centrally inside `_build-artifacts.yaml` from `changeset status` (target next version) or the merged `package.json` (official), never from the working tree; package.json is left untouched on `main`/feature branches. All builds pin an exact SHA (`github.sha`, PR head sha, `merge_commit_sha`) — never branch tips.
 - Publishing a tag that already exists is an idempotent skip (G5), by design.
 - Branch protection (manual, GitHub Settings): required PR, checks `changeset-required` + `lint-build`, "branches up to date" OFF.
 
@@ -48,11 +52,11 @@ See `docs/DFA_CICD_DESIGN.md` (design/DFA source of truth) and the workflows in
 
 ## Landing (`apps/landing`)
 
-- Astro + Tailwind v4, output `apps/landing/dist`. Deployed to GitHub Pages at base path `/pinax` manually via `deploy-landing.yml` (`workflow_dispatch`). Pages source must stay "GitHub Actions".
+- Astro + Tailwind v4, output `apps/landing/dist`. Deployed to GitHub Pages at base path `/pinax` manually via `deploy-landing.yaml` (`workflow_dispatch` with a required `tag` input — build/deploy from that tagged snapshot). Pages source must stay "GitHub Actions".
 - Landing releases (zip) are versioned snapshots; Pages deploy is the live site — they are independent.
 
 ## CI gotchas
 
 - All jobs explicitly use `actions/setup-node@v4` with `node-version: 24` — don't rely on runner defaults.
-- Reusable `publish-release.yml` is invoked from `prerelease.yml`, `release-candidates.yml`, `publish-official.yml` via `uses: ./.github/workflows/...`.
+- Reusable `_build-artifacts.yaml` (single source of truth for version computation + asset builds) and `_publish-release.yaml` (artifact download + `gh release create`) are invoked from `trigger-prerelease.yaml`, `trigger-rc.yaml`, `trigger-release.yaml` via `uses: ./.github/workflows/...`. Reusable workflows are prefixed with `_`; all workflows use the `.yaml` extension (no legacy `.yml` files).
 - Local subagents exist for scoped work: `.opencode/agents/pinax-desktop-engineer.md` (desktop architecture compliance) and `.opencode/agents/gitops-cicd-engineer.md` (workflows/releases).
