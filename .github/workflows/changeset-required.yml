@@ -1,0 +1,60 @@
+name: Changeset Required
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: changeset-required-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changeset-required:
+    name: changeset-required
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check changeset presence
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -u
+
+          # The Version Packages PR is exempt by construction: its own commit
+          # deletes every used changeset, so the check below would (correctly)
+          # fail. It must RUN and PASS here (a skipped job does not satisfy the
+          # branch-protection required-check contract).
+          if [ "$HEAD_REF" = "changeset-release/main" ]; then
+            echo "Release PR (changeset-release/main) is exempt from the changeset gate."
+            exit 0
+          fi
+
+          CHANGESETS=$(git diff --diff-filter=ACMR --name-only "${BASE_SHA}...${HEAD_SHA}" -- .changeset/ \
+            | sed -E 's#^\.changeset/##' \
+            | grep -Ev '^(config\.json|README\.md|commit\.mjs)$' || true)
+
+          if [ -z "$CHANGESETS" ]; then
+            echo "::error::No changeset found. Run 'pnpm changeset add' (or 'pnpm changeset add --empty' for docs-only PRs) to create a .changeset/*.md file."
+            exit 1
+          fi
+
+          echo "Changesets detected:"
+          echo "$CHANGESETS"

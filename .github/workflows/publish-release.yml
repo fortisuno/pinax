@@ -1,0 +1,382 @@
+name: Publish Release (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      packages:
+        description: JSON array of package nicknames (e.g. ["pinax-desktop","pinax-landing"])
+        type: string
+        required: true
+      versions-json:
+        description: JSON object mapping nicknames to version strings
+        type: string
+        required: true
+      prerelease:
+        description: "Pre-release type: alpha, rc, or empty (official)"
+        type: string
+        required: false
+        default: ""
+      ref:
+        description: Git ref (SHA) to checkout and build from
+        type: string
+        required: true
+      notes-json:
+        description: JSON object mapping nicknames to markdown release notes
+        type: string
+        required: true
+      desktop-matrix:
+        description: JSON array of matrix rows for desktop builds (e.g. [{"platform":"linux","os":"ubuntu-latest","arch":"x64"}])
+        type: string
+        required: true
+    secrets:
+      CSC_LINK:
+        description: Apple Developer certificate (.p12) used for notarized signing
+        required: false
+      CSC_KEY_PASSWORD:
+        description: Password for the Apple Developer certificate
+        required: false
+      APPLE_ID:
+        description: Apple ID used for notarization
+        required: false
+      APPLE_APP_SPECIFIC_PASSWORD:
+        description: App-specific password used for notarization
+        required: false
+      APPLE_TEAM_ID:
+        description: Apple Developer team ID
+        required: false
+      APPLE_API_KEY:
+        description: Apple App Store Connect API key
+        required: false
+      APPLE_API_KEY_ID:
+        description: Apple App Store Connect API key ID
+        required: false
+      APPLE_API_ISSUER:
+        description: Apple App Store Connect API issuer ID
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    name: Compute release plan
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.compute.outputs.packages }}
+      versions-json: ${{ steps.compute.outputs.versions-json }}
+      notes-json: ${{ steps.compute.outputs.notes-json }}
+      has-desktop: ${{ steps.compute.outputs.has-desktop }}
+      has-landing: ${{ steps.compute.outputs.has-landing }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Compute release plan
+        id: compute
+        env:
+          PACKAGES: ${{ inputs.packages }}
+          VERSIONS_JSON: ${{ inputs.versions-json }}
+          NOTES_JSON: ${{ inputs.notes-json }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+            const packages = JSON.parse(process.env.PACKAGES);
+            const versions = JSON.parse(process.env.VERSIONS_JSON);
+            const notes = JSON.parse(process.env.NOTES_JSON);
+
+            const toRelease = [];
+            const filteredVersions = {};
+            const filteredNotes = {};
+            let hasDesktop = false;
+            let hasLanding = false;
+
+            for (const pkg of packages) {
+              const ver = versions[pkg];
+              const tag = pkg + '@' + ver;
+
+              try {
+                execSync('git rev-parse -q --verify refs/tags/' + tag, { stdio: 'pipe' });
+                console.log('G5 skip: tag ' + tag + ' already exists');
+                continue;
+              } catch {}
+
+              toRelease.push(pkg);
+              filteredVersions[pkg] = ver;
+              filteredNotes[pkg] = notes[pkg] || 'Release ' + tag;
+              if (pkg.includes('desktop')) hasDesktop = true;
+              if (pkg.includes('landing')) hasLanding = true;
+            }
+
+            if (toRelease.length === 0) {
+              console.log('All tags exist — nothing to release');
+            }
+
+            const append = (k, v) => fs.appendFileSync(process.env.GITHUB_OUTPUT, k + '=' + v + '\n');
+            append('packages', JSON.stringify(toRelease));
+            append('versions-json', JSON.stringify(filteredVersions));
+            append('notes-json', JSON.stringify(filteredNotes));
+            append('has-desktop', hasDesktop ? 'true' : 'false');
+            append('has-landing', hasLanding ? 'true' : 'false');
+          "
+
+  build-desktop:
+    name: Build desktop (${{ matrix.platform }})
+    needs: prepare
+    if: needs.prepare.outputs.has-desktop == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.desktop-matrix) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get version
+        id: version
+        env:
+          VERSIONS_JSON: ${{ needs.prepare.outputs.versions-json }}
+        run: |
+          VERSION=$(node -p "JSON.parse(process.env.VERSIONS_JSON)['pinax-desktop']")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Clean previous release outputs
+        shell: bash
+        run: rm -rf release
+
+      - name: Build installers
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK == '' && 'false' || 'true' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          for v in CSC_LINK CSC_KEY_PASSWORD WIN_CSC_LINK WIN_CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID APPLE_API_KEY APPLE_API_KEY_ID APPLE_API_ISSUER; do
+            if [ -z "${!v:-}" ]; then unset "$v"; fi
+          done
+
+          pnpm --filter @pinax/desktop dist
+
+          if [ "${{ matrix.platform }}" = "macos-intel" ]; then
+            pnpm --filter @pinax/desktop exec electron-builder --mac --x64 --config.extraMetadata.version="$VERSION"
+          elif [ "${{ matrix.platform }}" = "macos-arm64" ]; then
+            pnpm --filter @pinax/desktop exec electron-builder --mac --arm64 --config.extraMetadata.version="$VERSION"
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            pnpm --filter @pinax/desktop exec electron-builder --linux --config.extraMetadata.version="$VERSION"
+          elif [ "${{ matrix.platform }}" = "windows" ]; then
+            pnpm --filter @pinax/desktop exec electron-builder --win --config.extraMetadata.version="$VERSION"
+          fi
+
+      - name: Verify macOS signature
+        if: startsWith(matrix.platform, 'macos-')
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -u
+          OUT="release/$VERSION"
+          echo "== DMG integrity =="
+          shopt -s nullglob
+          DMGS=("$OUT"/*.dmg)
+          if [ "${#DMGS[@]}" -eq 0 ]; then
+            echo "ERROR: no .dmg produced in $OUT"
+            ls -la "$OUT" || true
+            exit 1
+          fi
+          for DMG in "${DMGS[@]}"; do
+            echo "--- $DMG"
+            du -h "$DMG"
+            shasum -a 256 "$DMG"
+            hdiutil verify "$DMG"
+            spctl -a -vvv --type install "$DMG" || true
+          done
+          echo "== .app signature =="
+          APP=$(find "$OUT" -maxdepth 3 -name "*.app" | head -n 1)
+          if [ -n "$APP" ]; then
+            echo "APP=$APP"
+            codesign --verify --deep --strict --verbose=2 "$APP" || true
+            spctl --assess --verbose --type exec "$APP" || true
+            xcrun stapler validate "$APP" || true
+          fi
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.platform }}
+          path: |
+            release/${{ steps.version.outputs.version }}/pinax-*.AppImage
+            release/${{ steps.version.outputs.version }}/pinax-*.zip
+            release/${{ steps.version.outputs.version }}/pinax-*.dmg
+            release/${{ steps.version.outputs.version }}/pinax-*-Setup.exe
+          if-no-files-found: error
+
+  build-landing:
+    name: Build landing
+    needs: prepare
+    if: needs.prepare.outputs.has-landing == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get version
+        id: version
+        env:
+          VERSIONS_JSON: ${{ needs.prepare.outputs.versions-json }}
+        run: |
+          VERSION=$(node -p "JSON.parse(process.env.VERSIONS_JSON)['pinax-landing']")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build landing
+        run: pnpm --filter @pinax/landing build
+
+      - name: Create landing zip
+        run: |
+          cd apps/landing/dist
+          zip -qr "$GITHUB_WORKSPACE/pinax-landing-${{ steps.version.outputs.version }}.zip" .
+
+      - name: Upload landing zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: landing-zip
+          path: pinax-landing-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
+
+  publish:
+    name: Create GitHub Releases
+    needs: [prepare, build-desktop, build-landing]
+    if: ${{ !cancelled() && (needs.build-desktop.result == 'success' || needs.build-landing.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Download installers
+        if: needs.prepare.outputs.has-desktop == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Flatten installers
+        if: needs.prepare.outputs.has-desktop == 'true'
+        run: |
+          mkdir -p installers
+          find artifacts -type f -exec mv {} installers/ \;
+          find artifacts -mindepth 1 -type d -empty -delete
+
+      - name: Download landing zip
+        if: needs.prepare.outputs.has-landing == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: landing-zip
+          path: .
+
+      - name: Create GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES: ${{ needs.prepare.outputs.packages }}
+          VERSIONS_JSON: ${{ needs.prepare.outputs.versions-json }}
+          NOTES_JSON: ${{ needs.prepare.outputs.notes-json }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          HAS_DESKTOP: ${{ needs.prepare.outputs.has-desktop }}
+          HAS_LANDING: ${{ needs.prepare.outputs.has-landing }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+            const packages = JSON.parse(process.env.PACKAGES);
+            const versions = JSON.parse(process.env.VERSIONS_JSON);
+            const notes = JSON.parse(process.env.NOTES_JSON);
+            const prerelease = process.env.PRERELEASE;
+            const hasDesktop = process.env.HAS_DESKTOP === 'true';
+            const hasLanding = process.env.HAS_LANDING === 'true';
+
+            for (const pkg of packages) {
+              const ver = versions[pkg];
+              const tag = pkg + '@' + ver;
+              const notesFile = '.release-notes-' + pkg.replace('/', '-') + '.md';
+              const isDesktop = pkg.includes('desktop');
+
+              // G5: double-check tag (safety net)
+              try {
+                execSync('git rev-parse -q --verify refs/tags/' + tag, { stdio: 'pipe' });
+                console.log('G5 skip: ' + tag);
+                continue;
+              } catch {}
+
+              fs.writeFileSync(notesFile, notes[pkg] || 'Release ' + tag);
+
+              const prereleaseFlag = prerelease ? '--prerelease' : '';
+              const assets = [];
+
+              if (isDesktop && hasDesktop) {
+                const installers = fs.readdirSync('installers').map(f => 'installers/' + f);
+                assets.push(...installers);
+              }
+
+              if (!isDesktop && hasLanding) {
+                const zipFiles = fs.readdirSync('.').filter(f => f.startsWith('pinax-landing-') && f.endsWith('.zip'));
+                assets.push(...zipFiles);
+              }
+
+              const cmd = ['gh', 'release', 'create', tag, '--title', tag, '--notes-file', notesFile];
+              if (prereleaseFlag) cmd.push(prereleaseFlag);
+              cmd.push(...assets);
+
+              console.log('Creating release: ' + tag);
+              execSync(cmd.join(' '), { stdio: 'inherit' });
+            }
+          "

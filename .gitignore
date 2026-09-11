@@ -13,6 +13,8 @@ dist-electron
 dist-ssr
 release
 *.local
+changeset-status.json
+cs.tmp.json
 
 # Editor directories and files
 .vscode/*
