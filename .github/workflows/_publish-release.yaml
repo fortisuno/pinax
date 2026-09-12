@@ -39,10 +39,11 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 24
+          install: "false"
+          cache: ""
 
       - name: Download installers
         # Artifacts are run-scoped; the caller runs _build-artifacts then this
@@ -117,3 +118,4 @@ jobs:
               execSync(cmd.join(' '), { stdio: 'inherit' });
             }
           "
+

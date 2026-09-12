@@ -1,0 +1,89 @@
+name: Check Lint Builds
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: lint-build-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect:
+    name: Detect packages
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+    steps:
+      - name: Detect packages from changesets
+        id: detect
+        uses: ./.github/actions/detect-packages
+        with:
+          pr-number: ${{ github.event.pull_request.number }}
+          repo: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fallback: both
+
+  lint-desktop:
+    name: lint-desktop
+    needs: detect
+    if: contains(fromJSON(needs.detect.outputs.packages), 'pinax-desktop')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Lint desktop
+        run: pnpm --filter @pinax/desktop lint
+
+      - name: Build desktop (compile only)
+        run: pnpm --filter @pinax/desktop dist
+
+  lint-landing:
+    name: lint-landing
+    needs: detect
+    if: contains(fromJSON(needs.detect.outputs.packages), 'pinax-landing')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Lint landing
+        run: pnpm --filter @pinax/landing lint
+
+      - name: Build landing
+        run: pnpm --filter @pinax/landing build
+
+  lint-build:
+    name: lint-build
+    needs: [detect, lint-desktop, lint-landing]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          echo "detect: ${{ needs.detect.result }}"
+          echo "lint-desktop: ${{ needs.lint-desktop.result }}"
+          echo "lint-landing: ${{ needs.lint-landing.result }}"
+          if [ "${{ needs.detect.result }}" != "success" ]; then
+            echo "::error::detect job failed"
+            exit 1
+          fi
+          if [ "${{ needs.lint-desktop.result }}" = "failure" ] || [ "${{ needs.lint-landing.result }}" = "failure" ]; then
+            echo "::error::one of the lint jobs failed"
+            exit 1
+          fi
+          echo "Lint checks passed (or correctly skipped)"
+

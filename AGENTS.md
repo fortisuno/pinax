@@ -11,12 +11,12 @@ repo: verification is `pnpm lint` + typecheck/build.
 - `pnpm build` / `pnpm build:desktop` — compiles **and packages** installers via electron-builder (slow, OS-bound). For a fast compile-only check use `pnpm --filter @pinax/desktop dist` (tsc + vite build only).
 - `pnpm build:landing` — `astro build` → `apps/landing/dist`.
 - `pnpm lint` — lints all workspaces (`eslint` for desktop, `astro check` for landing). `--no-bail`.
-- shadcn CLI must run **inside** `apps/desktop`: `pnpm exec shadcn add <component>` (it's a workspace dependency there, not in root).
+- shadcn CLI must run **inside** `apps/desktop`: `pnpm exec shadcn add <component>` (it''s a workspace dependency there, not in root).
 - Root workflow: install → lint → dist/build. CI forces `pnpm install --frozen-lockfile` and Node 24.
 
 ## Changesets & versioning
 
-- Every feature/fix PR **must** include ≥1 `.changeset/*.md`; enforced by a required status check (`changeset-required`). Docs-only PRs use `pnpm changeset add --empty`. Exemption for the release PR is handled in-workflow, don't remove it.
+- Every feature/fix PR **must** include ≥1 `.changeset/*.md`; enforced by a required status check (`changeset-required`). Docs-only PRs use `pnpm changeset add --empty`. Exemption for the release PR is handled in-workflow, don''t remove it.
 - `.changeset/commit.mjs` defines only `getAddMessage`. `getVersionMessage` is intentionally absent → `pnpm version-packages` (`changeset version`) never auto-commits; version bumps + CHANGELOG edits stay uncommitted for review.
 - **Never hand-edit `version` in `apps/*/package.json`.** Versions are bumped only by `changesets/action` on its `changeset-release/main` branch.
 - `changeset status --output=<tmp>.json` writes a file; use temp paths (`.gitignore`d) and never commit status output (root `changeset-status.json` was removed for this reason).
@@ -25,7 +25,7 @@ repo: verification is `pnpm lint` + typecheck/build.
 ## Release pipeline
 
 See `docs/DFA_CICD_DESIGN.md` (design/DFA source of truth) and the workflows in
-`.github/workflows/` (`check-changesets-exists.yaml`, `check-landing-lint.yaml`,
+`.github/workflows/` (`check-changesets-exists.yaml`, `check-lint-builds.yaml`,
 `trigger-prerelease.yaml`, `trigger-rc.yaml`, `trigger-release.yaml`,
 `deploy-landing.yaml`, plus reusables `_build-artifacts.yaml` +
 `_publish-release.yaml`; note the `.yaml` extension and `_` prefix for reusable
@@ -37,7 +37,7 @@ workflows):
 - Release **tags are named `pinax-desktop@<V>` / `pinax-landing@<V>`**, not `v<V>` (legacy `v0.1.x` tags are history). One release per changed package; `pinax-landing@<V>` ships `pinax-landing-<V>.zip`, `pinax-desktop@<V>` ships installers for all 3 OS.
 - Versions are computed centrally inside `_build-artifacts.yaml` from `changeset status` (target next version) or the merged `package.json` (official), never from the working tree; package.json is left untouched on `main`/feature branches. All builds pin an exact SHA (`github.sha`, PR head sha, `merge_commit_sha`) — never branch tips.
 - Publishing a tag that already exists is an idempotent skip (G5), by design.
-- Branch protection (manual, GitHub Settings): required PR, checks `changeset-required` + `lint-build`, "branches up to date" OFF.
+- Branch protection (manual, GitHub Settings): required PR, checks `changeset-required` + `lint-build` (aggregator of `lint-desktop`/`lint-landing` scoped to PR changesets), "branches up to date" OFF.
 
 ## Desktop app rules (`apps/desktop`)
 
@@ -57,6 +57,9 @@ workflows):
 
 ## CI gotchas
 
-- All jobs explicitly use `actions/setup-node@v4` with `node-version: 24` — don't rely on runner defaults.
+- All jobs explicitly use `actions/setup-node@v4` with `node-version: 24` — don''t rely on runner defaults.
 - Reusable `_build-artifacts.yaml` (single source of truth for version computation + asset builds) and `_publish-release.yaml` (artifact download + `gh release create`) are invoked from `trigger-prerelease.yaml`, `trigger-rc.yaml`, `trigger-release.yaml` via `uses: ./.github/workflows/...`. Reusable workflows are prefixed with `_`; all workflows use the `.yaml` extension (no legacy `.yml` files).
+- `check-lint-builds.yaml` scopes `lint-desktop`/`lint-landing` to the PR''s own `.changeset/*.md` (same PR-scoping as prerelease) and exposes `lint-build` aggregator as the required check.
+- Composite actions en `.github/actions/` (`detect-packages` D1, `setup-node-pnpm` D2, `resolve-desktop-matrix` P3, `get-version` P4) son SSOT — no duplicar literales `macos-26` ni `VERSION=$(node -p "JSON.parse…` fuera de ellos. Ver `.github/actions/README.md` con tabla de decisión. `compute-release-plan` **evaluado Fase 2 y confirmado Fase 3: permanece inline en `_build-artifacts:compute`** por acoplamiento a `changeset status` + variantes alpha/rc/official + G5 (≈140 líneas, 1 solo call-site, bajo ROI) — ver tabla costo/beneficio en `docs/DFA_CICD_DESIGN.md:Composite actions`. Fase 3 pulió `ensure-main` (`prerelease != ''` solo alpha/rc), G5 doble capa (compute filtra + publish safety net), `setup-node-pnpm` en 11 jobs, `get-version` sin fugas, `trap cs.tmp.json` + `.gitignore`, y READMEs D1–P4.
+- `ensure-main: true` solo en `_build-artifacts:compute` cuando `prerelease != ''` (alpha/rc necesitan `main` para `changeset status`); `install: prerelease != ''` evita `pnpm install` en official (solo lee `package.json`). G5 tri-capa: `compute` filtra tags existentes, `_publish-release` re-chequea, `trigger-release:prepare` pre-filtra.
 - Local subagents exist for scoped work: `.opencode/agents/pinax-desktop-engineer.md` (desktop architecture compliance) and `.opencode/agents/gitops-cicd-engineer.md` (workflows/releases).

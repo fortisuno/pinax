@@ -31,10 +31,11 @@ jobs:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 24
+          install: "false"
+          cache: ""
 
       - name: Compute released packages
         id: compute
@@ -68,17 +69,26 @@ jobs:
           "
           echo "ref=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
 
+  resolve:
+    name: Resolve desktop matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.mtx.outputs.matrix }}
+    steps:
+      - name: Resolve matrix
+        id: mtx
+        uses: ./.github/actions/resolve-desktop-matrix
+
   build:
     name: Build official artifacts
-    needs: prepare
+    needs: [prepare, resolve]
     if: needs.prepare.outputs.packages != '[]'
     uses: ./.github/workflows/_build-artifacts.yaml
     with:
       ref: ${{ needs.prepare.outputs.ref }}
       prerelease: ""
       packages-hint: ${{ needs.prepare.outputs.packages }}
-      desktop-matrix: |
-        [{"platform":"linux","os":"ubuntu-latest","arch":"x64"},{"platform":"windows","os":"windows-latest","arch":"x64"},{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]
+      desktop-matrix: ${{ needs.resolve.outputs.matrix }}
     secrets: inherit
 
   release:
@@ -93,3 +103,4 @@ jobs:
       notes-json: ${{ needs.build.outputs.notes-json }}
       prerelease: ""
     secrets: inherit
+

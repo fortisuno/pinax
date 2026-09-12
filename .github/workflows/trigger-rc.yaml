@@ -16,8 +16,19 @@ permissions:
   pull-requests: write
 
 jobs:
+  resolve:
+    name: Resolve desktop matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.mtx.outputs.matrix }}
+    steps:
+      - name: Resolve matrix
+        id: mtx
+        uses: ./.github/actions/resolve-desktop-matrix
+
   publish-rc:
     name: Build RC artifacts
+    needs: resolve
     # G3': skip commits authored by changesets/action (rebase/squash merges keep
     # the "Version Packages" commit/PR title; "Release " covers legacy naming).
     if: |
@@ -28,8 +39,7 @@ jobs:
       ref: ${{ github.sha }}
       prerelease: rc
       packages-hint: '["pinax-desktop","pinax-landing"]'
-      desktop-matrix: |
-        [{"platform":"linux","os":"ubuntu-latest","arch":"x64"},{"platform":"windows","os":"windows-latest","arch":"x64"},{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]
+      desktop-matrix: ${{ needs.resolve.outputs.matrix }}
     secrets: inherit
 
   release-rc:
@@ -58,17 +68,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Create Version Packages Pull Request
         # No `title` input -> changesets/action uses its default "Version Packages".
@@ -80,3 +81,4 @@ jobs:
           version: pnpm version-packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

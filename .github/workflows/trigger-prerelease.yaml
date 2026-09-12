@@ -21,12 +21,15 @@ jobs:
     outputs:
       ref: ${{ steps.parse.outputs.ref }}
       short-sha: ${{ steps.parse.outputs.short-sha }}
-      desktop-matrix: ${{ steps.parse.outputs.desktop-matrix }}
+      desktop-matrix: ${{ steps.mtx.outputs.matrix }}
+      packages-hint: ${{ steps.pkgs.outputs.packages }}
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 24
+          cache: ""
+          install: "false"
+          setup-pnpm: "false"
 
       - name: Parse /prerelease and authorize
         id: parse
@@ -73,22 +76,23 @@ jobs:
           HEAD_SHA=$(echo "$PR_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).head.sha")
           echo "ref=$HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "short-sha=${HEAD_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "os-arg=$OS_ARG" >> "$GITHUB_OUTPUT"
           echo "Ref pinned to $HEAD_SHA"
 
-          # Desktop matrix scope depends on the /prerelease OS argument.
-          OS_ARG_LOWER=$(echo "$OS_ARG" | tr '[:upper:]' '[:lower:]')
-          case "$OS_ARG_LOWER" in
-            win11|windows)
-              MATRIX='[{"platform":"windows","os":"windows-latest","arch":"x64"}]' ;;
-            linux)
-              MATRIX='[{"platform":"linux","os":"ubuntu-latest","arch":"x64"}]' ;;
-            mac|macos|darwin)
-              MATRIX='[{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]' ;;
-            *)
-              MATRIX='[{"platform":"linux","os":"ubuntu-latest","arch":"x64"},{"platform":"windows","os":"windows-latest","arch":"x64"},{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]' ;;
-          esac
-          echo "desktop-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
-          echo "Desktop matrix: $MATRIX"
+      - name: Resolve desktop matrix
+        id: mtx
+        uses: ./.github/actions/resolve-desktop-matrix
+        with:
+          os-arg: ${{ steps.parse.outputs.os-arg }}
+
+      - name: Detect packages from changesets
+        id: pkgs
+        uses: ./.github/actions/detect-packages
+        with:
+          pr-number: ${{ github.event.issue.number }}
+          repo: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fallback: empty
 
   build:
     name: Build alpha artifacts
@@ -99,7 +103,7 @@ jobs:
       ref: ${{ needs.parse.outputs.ref }}
       prerelease: alpha
       short-sha: ${{ needs.parse.outputs.short-sha }}
-      packages-hint: '["pinax-desktop","pinax-landing"]'
+      packages-hint: ${{ needs.parse.outputs.packages-hint }}
       desktop-matrix: ${{ needs.parse.outputs.desktop-matrix }}
     secrets: inherit
 
@@ -115,3 +119,4 @@ jobs:
       notes-json: ${{ needs.build.outputs.notes-json }}
       prerelease: alpha
     secrets: inherit
+

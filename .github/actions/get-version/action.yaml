@@ -1,0 +1,27 @@
+# P4 — SSOT inyección VERSION (Fase 2). Ver README.md.
+name: Get version
+description: Extrae la versión de un package desde versions-json (output de _build-artifacts:compute) (P4 SSOT)
+inputs:
+  versions-json:
+    description: JSON object mapping pinax-desktop|pinax-landing → version string
+    required: true
+  package:
+    description: Package slug (pinax-desktop|pinax-landing)
+    required: true
+outputs:
+  version:
+    description: Version string resuelta
+    value: ${{ steps.get.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - name: Get version
+      id: get
+      shell: bash
+      env:
+        VERSIONS_JSON: ${{ inputs.versions-json }}
+        PKG: ${{ inputs.package }}
+      run: |
+        VERSION=$(node -p "JSON.parse(process.env.VERSIONS_JSON)[process.env.PKG]")
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "Version for $PKG: $VERSION"
