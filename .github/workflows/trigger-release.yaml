@@ -26,7 +26,7 @@ jobs:
       ref: ${{ steps.compute.outputs.ref }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
@@ -76,7 +76,7 @@ jobs:
       matrix: ${{ steps.mtx.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Resolve matrix
         id: mtx
