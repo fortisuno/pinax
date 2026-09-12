@@ -10,8 +10,8 @@ concurrency:
 
 permissions:
   contents: write
-  pull-requests: read
-  issues: read
+  pull-requests: write
+  issues: write
 
 jobs:
   parse:
@@ -25,7 +25,7 @@ jobs:
       packages-hint: ${{ steps.pkgs.outputs.packages }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
@@ -122,4 +122,34 @@ jobs:
       notes-json: ${{ needs.build.outputs.notes-json }}
       prerelease: alpha
     secrets: inherit
+
+  feedback:
+    name: Comment prerelease feedback
+    needs: [parse, build, publish]
+    if: needs.build.outputs.packages != '[]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment with published versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES: ${{ needs.build.outputs.packages }}
+          VERSIONS_JSON: ${{ needs.build.outputs.versions-json }}
+        run: |
+          set -euo pipefail
+          BODY=$(node -e "
+            const pkgs = JSON.parse(process.env.PACKAGES);
+            const vers = JSON.parse(process.env.VERSIONS_JSON);
+            const list = pkgs.map(p => p + '@' + vers[p]).join(', ');
+            console.log('🚀 Prerelease publicado: ' + list);
+          ")
+          echo "Comment body: $BODY"
+          REPO="${{ github.repository }}"
+          PR="${{ github.event.issue.number }}"
+          # Idempotency: skip if identical comment already exists (retry safety, G5 resilient)
+          if gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[].body' 2>/dev/null | grep -Fxq "$BODY"; then
+            echo "Idempotent skip: identical prerelease comment already exists"
+            exit 0
+          fi
+          gh api "repos/$REPO/issues/$PR/comments" -f body="$BODY" >/dev/null
+          echo "Feedback comment posted to PR #$PR"
 

@@ -32,10 +32,10 @@ runs:
     # aún declaran runs.using: node20, runner fuerza node24 — se corrige bump a v5/v6 (node24).
     - name: Setup pnpm
       if: inputs.setup-pnpm == 'true'
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ inputs.node-version }}
         cache: ${{ inputs.setup-pnpm == 'true' && inputs.cache || '' }}
