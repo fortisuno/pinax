@@ -21,13 +21,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 24
+          install: "false"
+          cache: ""
 
       - name: Check changeset presence
         shell: bash
@@ -58,3 +56,4 @@ jobs:
 
           echo "Changesets detected:"
           echo "$CHANGESETS"
+

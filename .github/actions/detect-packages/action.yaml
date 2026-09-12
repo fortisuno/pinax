@@ -1,0 +1,92 @@
+# D1 — SSOT detección de packages desde .changeset/*.md (Fase 1). Ver README.md.
+name: Detect packages from changesets
+description: Parsea .changeset/*.md del PR via gh api y extrae ["pinax-desktop","pinax-landing"] (D1 SSOT)
+inputs:
+  pr-number:
+    description: 'PR number. Optional: empty on push (e.g. check-lint-builds push:main) -> skips gh api and falls back per fallback input'
+    required: false
+    default: ""
+  repo:
+    description: Repository slug owner/repo
+    required: true
+  token:
+    description: GitHub token for gh CLI
+    required: true
+  fallback:
+    description: "both|empty - what to return if no packages detected (push with empty pr-number falls back to both)"
+    required: false
+    default: both
+outputs:
+  packages:
+    description: JSON array of package slugs
+    value: ${{ steps.detect.outputs.packages }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24
+
+    - name: Detect
+      id: detect
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        REPO: ${{ inputs.repo }}
+        FALLBACK: ${{ inputs.fallback }}
+      run: |
+        set -u
+        if [ -z "$PR_NUMBER" ]; then
+          echo "::notice::No PR number provided (push event) - skipping gh api, using fallback=$FALLBACK"
+          PACKAGES_JSON="[]"
+        else
+          PR_JSON=$(gh api "repos/$REPO/pulls/$PR_NUMBER" 2>/dev/null || echo "{}")
+          HEAD_SHA=$(echo "$PR_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).head.sha || ''" 2>/dev/null || echo "")
+          PR_FILES_JSON=$(gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate 2>/dev/null || echo "[]")
+          PACKAGES_JSON=$(echo "$PR_FILES_JSON" | HEAD_SHA="$HEAD_SHA" REPO="$REPO" node -e "
+          const fs=require('fs');
+          const {execSync}=require('child_process');
+          let files=[];
+          try{ files=JSON.parse(fs.readFileSync(0,'utf8')); }catch{ files=[]; }
+          if(!Array.isArray(files)) files=[];
+          const pkgs=new Set();
+          const headSha=process.env.HEAD_SHA||'';
+          const repo=process.env.REPO||'';
+          for(const f of files){
+            const fn=f.filename||'';
+            if(!fn.startsWith('.changeset/') || !fn.endsWith('.md')) continue;
+            if(f.status==='removed') continue;
+            const base=fn.replace('.changeset/','');
+            if(['config.json','README.md','commit.mjs'].includes(base)) continue;
+            const patch=f.patch||'';
+            let foundDesktop=patch.includes('@pinax/desktop');
+            let foundLanding=patch.includes('@pinax/landing');
+            if(foundDesktop) pkgs.add('pinax-desktop');
+            if(foundLanding) pkgs.add('pinax-landing');
+            if(!foundDesktop || !foundLanding){
+              try{
+                const b64=execSync('gh api \"repos/'+repo+'/contents/'+fn+'?ref='+headSha+'\" --jq .content', {encoding:'utf8', stdio:['pipe','pipe','pipe']});
+                const decoded=Buffer.from(b64.replace(/\s/g,''), 'base64').toString('utf8');
+                if(decoded.includes('@pinax/desktop')) pkgs.add('pinax-desktop');
+                if(decoded.includes('@pinax/landing')) pkgs.add('pinax-landing');
+              }catch(e){}
+            }
+          }
+          console.log(JSON.stringify([...pkgs]));
+        ")
+        fi
+        if ! echo "$PACKAGES_JSON" | node -e "JSON.parse(require('fs').readFileSync(0,'utf8'))" 2>/dev/null; then
+          echo "::warning::Failed to compute packages, defaulting to []"
+          PACKAGES_JSON="[]"
+        fi
+        if [ "$PACKAGES_JSON" = "[]" ] && [ "$FALLBACK" = "both" ]; then
+          echo "::notice::No changeset packages detected, falling back to both"
+          PACKAGES_JSON='["pinax-desktop","pinax-landing"]'
+        fi
+        if [ "$PACKAGES_JSON" = "[]" ] && [ "$FALLBACK" = "empty" ]; then
+          echo "::warning::No changeset packages detected (fallback empty)"
+        fi
+        echo "packages=$PACKAGES_JSON" >> "$GITHUB_OUTPUT"
+        echo "Detected packages: $PACKAGES_JSON"

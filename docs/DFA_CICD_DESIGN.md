@@ -147,7 +147,7 @@ Prerelease and RC releases are created with `--prerelease`.
 | Workflow | Implements |
 |---|---|
 | `check-changesets-exists.yaml` | transitions 1–2 (required check `changeset-required`) |
-| `check-landing-lint.yaml` | required check `lint-build` (lint, desktop tsc+vite, landing build) |
+| `check-lint-builds.yaml` | required check `lint-build` (aggregator of `lint-desktop`/`lint-landing` scoped to PR changesets) |
 | `trigger-prerelease.yaml` | transitions 3–4 (G2); calls `_build-artifacts.yaml` (`alpha`) → `_publish-release.yaml` |
 | `trigger-rc.yaml` | transitions 5–6 (rc publish via reusables ‖ changesets/action → "Version Packages" PR, G3′); calls `_build-artifacts.yaml` (`rc`) → `_publish-release.yaml` |
 | `trigger-release.yaml` | transition 8 (G4); calls `_build-artifacts.yaml` (`official`) → `_publish-release.yaml` |
@@ -155,13 +155,28 @@ Prerelease and RC releases are created with `--prerelease`.
 | `_publish-release.yaml` | reusable `workflow_call` — artifact downloads + `gh release create` for all kinds |
 | `deploy-landing.yaml` | manual GitHub Pages deploy of a tagged snapshot (`workflow_dispatch`, required `tag` input) |
 
+## Composite actions (SSOT)
+
+`.github/actions/` — Fase 1–3. Ver `.github/actions/README.md` para tabla de decisión `compute-release-plan`.
+
+| ID | Action | SSOT | Consumidores |
+|---|---|---|---|
+| D1 | `detect-packages` | Parseo `.changeset/*.md` → `["pinax-desktop","pinax-landing"]` (gh api + fallback `fallback:both/empty`) | `trigger-prerelease:parse` (`empty`), `check-lint-builds:detect` (`both`) |
+| D2 | `setup-node-pnpm` | `pnpm/action-setup@v4` + `setup-node@v4@24` + `ensure-main` + `pnpm install` | 11 jobs (ver `setup-node-pnpm/README.md` tabla cableado) |
+| P3 | `resolve-desktop-matrix` | `macos-26` pin + 4 filas matrix + scoping `win11\|linux\|mac` | `trigger-prerelease` (scoped), `trigger-rc`/`trigger-release` (full) |
+| P4 | `get-version` | `VERSION=$(node -p "JSON.parse…")` → `extraMetadata.version` | `_build-artifacts:build-desktop`, `build-landing` |
+
+`compute-release-plan` **permanece inline** en `_build-artifacts:compute` (decisión Fase 3): 140 líneas, 1 solo call-site, alto acoplamiento (`checkout` + `ensure-main` + `trap cs.tmp.json` + `git tag -l` + `package.json/CHANGELOG` + `GITHUB_OUTPUT` ×6). Extraer a composite tendría ~40 líneas de plumbing para 0 líneas deduplicadas (ROI bajo). Pulido Fase 3 aplicado en su lugar: `ensure-main` condicional (`prerelease != ''` solo alpha/rc), `install` condicional (official no instala), G5 tri-capa (`compute` + `_publish-release` safety net + `trigger-release:prepare`), `trap` + `.gitignore` `cs.tmp.json`, `macos-26` solo en P3, READMEs D1–P4.
+
+`ensure-main` significa `git show-ref --verify refs/heads/main || git branch main origin/main` (requiere `fetch-depth: 0` previo). Solo alpha/rc lo necesitan para `changeset status` diff contra `main`.
+
 ## Branch protection (manual GitHub settings)
 
 `Settings → Branches → main`:
 
 - Require a pull request before merging (blocks direct pushes).
 - Require 1 approval. Apply to administrators. Dismiss stale reviews = off.
-- Require status checks: `changeset-required`, `lint-build`. "Require branches up
+- Require status checks: `changeset-required`, `lint-build` (aggregator of `lint-desktop`/`lint-landing`). "Require branches up
   to date" = **off** (changesets/action keeps the official PR updated itself).
 - Do not allow force pushes / deletions.
 - Require conversation resolution = on.
@@ -182,3 +197,4 @@ satisfy a required status check). Docs-only PRs use `pnpm changeset add --empty`
 | Official tag vs pre-release tags (`pinax-desktop@0.2.0` vs `…@0.2.0-alpha.*`) | Distinct namespaces; G5 skip on pre-existing tags |
 | Queued runs reading branch tip | All snapshot checkouts pin exact SHAs (`github.sha`, `merge_commit_sha`, PR head sha) |
 | Stale `changeset-status.json` committed at repo root | Removed + gitignored; workflows use temp files |
+

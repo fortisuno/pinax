@@ -88,25 +88,14 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
-      - name: Ensure base branch exists for changeset status
-        if: inputs.prerelease != ''
-        run: |
-          git show-ref --verify refs/heads/main >/dev/null 2>&1 || git branch main origin/main
-          git rev-parse --verify main >/dev/null && echo "base branch main at $(git rev-parse --short main)"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        # Only prerelease kinds need @changesets/cli; official reads package.json only.
-        if: inputs.prerelease != ''
-        run: pnpm install --frozen-lockfile
+          # official (prerelease == '') solo lee package.json: no necesita pnpm install ni cache restore
+          # evita warnings DEP/extra restore (≈ 250 MB) en ese path
+          cache: ${{ inputs.prerelease != '' && 'pnpm' || '' }}
+          install: ${{ inputs.prerelease != '' }}
+          ensure-main: ${{ inputs.prerelease != '' }}
 
       - name: Compute release plan
         id: compute
@@ -264,26 +253,15 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Get version
         id: version
-        shell: bash
-        env:
-          VERSIONS_JSON: ${{ needs.compute.outputs.versions-json }}
-        run: |
-          VERSION=$(node -p "JSON.parse(process.env.VERSIONS_JSON)['pinax-desktop']")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/get-version
+        with:
+          versions-json: ${{ needs.compute.outputs.versions-json }}
+          package: pinax-desktop
 
       - name: Clean previous release outputs
         shell: bash
@@ -373,26 +351,15 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Get version
         id: version
-        shell: bash
-        env:
-          VERSIONS_JSON: ${{ needs.compute.outputs.versions-json }}
-        run: |
-          VERSION=$(node -p "JSON.parse(process.env.VERSIONS_JSON)['pinax-landing']")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/get-version
+        with:
+          versions-json: ${{ needs.compute.outputs.versions-json }}
+          package: pinax-landing
 
       - name: Build landing
         run: pnpm --filter @pinax/landing build

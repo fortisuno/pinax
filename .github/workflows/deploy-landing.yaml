@@ -27,17 +27,8 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
       - name: Build landing
         run: pnpm --filter @pinax/landing build

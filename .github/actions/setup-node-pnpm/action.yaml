@@ -1,0 +1,53 @@
+# D2 — SSOT Node 24 + pnpm + ensure-main (Fase 1). Ver README.md para cableado por job.
+name: Setup Node + pnpm
+description: Setup pnpm and Node 24 with optional cache, install and ensure main branch (D2 SSOT)
+inputs:
+  node-version:
+    description: Node version
+    required: false
+    default: "24"
+  cache:
+    description: pnpm cache value for setup-node (pnpm or empty)
+    required: false
+    default: "pnpm"
+  install:
+    description: "true to run pnpm install --frozen-lockfile"
+    required: false
+    default: "true"
+  setup-pnpm:
+    description: "true to run pnpm/action-setup (set false when only Node+gh is needed, e.g. parse jobs)"
+    required: false
+    default: "true"
+  ensure-main:
+    description: "true to ensure local main branch exists (for changeset status)"
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    # Orden pnpm → node es intencional: actions/setup-node con cache: pnpm necesita
+    # pnpm ya instalado para `pnpm store path --silent` (log: /home/runner/setup-pnpm/...).
+    # No invertir a node → pnpm: rompería el cache restore. Ver pnpm/action-setup docs.
+    # Warning persistente "Node.js 20 is deprecated" es upstream: checkout@v4/setup-node@v4/pnpm@v4
+    # aún declaran runs.using: node20, runner fuerza node24 — se corrige bump a v5/v6 (node24).
+    - name: Setup pnpm
+      if: inputs.setup-pnpm == 'true'
+      uses: pnpm/action-setup@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: ${{ inputs.setup-pnpm == 'true' && inputs.cache || '' }}
+
+    - name: Ensure main branch
+      if: inputs.ensure-main == 'true'
+      shell: bash
+      run: |
+        git show-ref --verify refs/heads/main >/dev/null 2>&1 || git branch main origin/main
+        git rev-parse --verify main >/dev/null && echo "base branch main at $(git rev-parse --short main)"
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile

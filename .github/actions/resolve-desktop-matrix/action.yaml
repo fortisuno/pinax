@@ -1,0 +1,34 @@
+# P3 — SSOT desktop matrix pin macos-26 (Fase 2). Ver README.md.
+name: Resolve desktop matrix
+description: Resuelve SSOT del desktop matrix (pin macos-26) con scoping opcional por os-arg (win11|linux|mac). Si os-arg vacío → full matrix 4 filas (P3 SSOT)
+inputs:
+  os-arg:
+    description: 'OS scope para /prerelease: win11|windows, linux, mac|macos|darwin. Vacío = full matrix.'
+    required: false
+    default: ""
+outputs:
+  matrix:
+    description: JSON array para fromJSON(inputs.desktop-matrix) en _build-artifacts
+    value: ${{ steps.resolve.outputs.matrix }}
+runs:
+  using: composite
+  steps:
+    - name: Resolve matrix
+      id: resolve
+      shell: bash
+      env:
+        OS_ARG: ${{ inputs.os-arg }}
+      run: |
+        set -u
+        case "$(echo "$OS_ARG" | tr '[:upper:]' '[:lower:]')" in
+          win11|windows)
+            MATRIX='[{"platform":"windows","os":"windows-latest","arch":"x64"}]' ;;
+          linux)
+            MATRIX='[{"platform":"linux","os":"ubuntu-latest","arch":"x64"}]' ;;
+          mac|macos|darwin)
+            MATRIX='[{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]' ;;
+          *)
+            MATRIX='[{"platform":"linux","os":"ubuntu-latest","arch":"x64"},{"platform":"windows","os":"windows-latest","arch":"x64"},{"platform":"macos-intel","os":"macos-26","arch":"x64"},{"platform":"macos-arm64","os":"macos-26","arch":"arm64"}]' ;;
+        esac
+        echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+        echo "Resolved desktop matrix (os-arg='$OS_ARG'): $MATRIX"
