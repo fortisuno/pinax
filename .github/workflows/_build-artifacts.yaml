@@ -88,6 +88,12 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
+      - name: Ensure base branch exists for changeset status
+        if: inputs.prerelease != ''
+        run: |
+          git show-ref --verify refs/heads/main >/dev/null 2>&1 || git branch main origin/main
+          git rev-parse --verify main >/dev/null && echo "base branch main at $(git rev-parse --short main)"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
