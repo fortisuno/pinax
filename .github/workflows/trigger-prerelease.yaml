@@ -24,6 +24,9 @@ jobs:
       desktop-matrix: ${{ steps.mtx.outputs.matrix }}
       packages-hint: ${{ steps.pkgs.outputs.packages }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
