@@ -39,6 +39,7 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: ${{ inputs.setup-pnpm == 'true' && inputs.cache || '' }}
+        package-manager-cache: false
 
     - name: Ensure main branch
       if: inputs.ensure-main == 'true'
