@@ -75,6 +75,9 @@ jobs:
     outputs:
       matrix: ${{ steps.mtx.outputs.matrix }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Resolve matrix
         id: mtx
         uses: ./.github/actions/resolve-desktop-matrix
