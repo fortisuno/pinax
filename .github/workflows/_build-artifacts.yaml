@@ -272,6 +272,7 @@ jobs:
 
       - name: Get version
         id: version
+        shell: bash
         env:
           VERSIONS_JSON: ${{ needs.compute.outputs.versions-json }}
         run: |
@@ -380,6 +381,7 @@ jobs:
 
       - name: Get version
         id: version
+        shell: bash
         env:
           VERSIONS_JSON: ${{ needs.compute.outputs.versions-json }}
         run: |
