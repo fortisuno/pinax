@@ -125,6 +125,11 @@ jobs:
 
             const prerelease = process.env.PRERELEASE || '';
             const hint = new Set(JSON.parse(process.env.PACKAGES_HINT || '[]'));
+            // Scoping for prerelease: hint is computed from PR diff (trigger-prerelease) to avoid leaking
+            // pending changesets from main. For alpha, hint should contain only packages touched by the PR.
+            // For rc/official, hint reflects packages actually bumped on main (computed via package.json or full hint).
+            console.log('PACKAGES_HINT (scoped) = ' + JSON.stringify([...hint]));
+            if (prerelease === 'alpha' && hint.size === 0) console.log('::warning::Empty packages-hint for alpha prerelease - likely PR has no valid .changeset; will result in Nothing to release');
             const nicknames = { '@pinax/desktop': 'pinax-desktop', '@pinax/landing': 'pinax-landing' };
             const candidates = { 'pinax-desktop': './apps/desktop', 'pinax-landing': './apps/landing' };
 
@@ -139,6 +144,7 @@ jobs:
               if (fs.existsSync('cs.tmp.json')) {
                 try { status = JSON.parse(fs.readFileSync('cs.tmp.json', 'utf8')); } catch {}
               }
+              console.log('changeset status releases: ' + JSON.stringify((status.releases||[]).map(r=>r.name+':'+r.type+'->'+r.newVersion)));
               const shortSha = process.env.SHORT_SHA || '';
 
               for (const r of status.releases || []) {

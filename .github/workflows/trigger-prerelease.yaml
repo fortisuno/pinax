@@ -22,6 +22,7 @@ jobs:
       ref: ${{ steps.parse.outputs.ref }}
       short-sha: ${{ steps.parse.outputs.short-sha }}
       desktop-matrix: ${{ steps.parse.outputs.desktop-matrix }}
+      packages-hint: ${{ steps.parse.outputs.packages-hint }}
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -75,6 +76,60 @@ jobs:
           echo "short-sha=${HEAD_SHA:0:7}" >> "$GITHUB_OUTPUT"
           echo "Ref pinned to $HEAD_SHA"
 
+          # --- Scoping fix: compute packages-hint from PR's own changesets only ---
+          # Prevents leaking pending changesets from main into the prerelease.
+          # Example: PR #20 only touches @pinax/landing but main has @pinax/desktop pending;
+          # without scoping, changeset status would include both and publish pinax-desktop@0.1.15-alpha.2+646c020
+          # incorrectly. We scope to files changed in the PR diff.
+          set +u
+          PR_FILES_JSON=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER/files" --paginate 2>/dev/null || echo "[]")
+          set -u
+          PACKAGES_HINT_JSON=$(echo "$PR_FILES_JSON" | HEAD_SHA="$HEAD_SHA" GITHUB_REPOSITORY="${{ github.repository }}" node -e "
+            const fs=require('fs');
+            const {execSync}=require('child_process');
+            let files=[];
+            try{ files=JSON.parse(fs.readFileSync(0,'utf8')); }catch{ files=[]; }
+            if(!Array.isArray(files)) files=[];
+            const pkgs=new Set();
+            const headSha=process.env.HEAD_SHA||'';
+            const repo=process.env.GITHUB_REPOSITORY||'';
+            for(const f of files){
+              const fn=f.filename||'';
+              if(!fn.startsWith('.changeset/') || !fn.endsWith('.md')) continue;
+              if(f.status==='removed') continue;
+              const base=fn.replace('.changeset/','');
+              if(['config.json','README.md','commit.mjs'].includes(base)) continue;
+              const patch=f.patch||'';
+              let foundDesktop = patch.includes('@pinax/desktop');
+              let foundLanding = patch.includes('@pinax/landing');
+              if(foundDesktop) pkgs.add('pinax-desktop');
+              if(foundLanding) pkgs.add('pinax-landing');
+              // Fallback: fetch raw content at HEAD if patch didn't contain markers (e.g., patch truncated or empty)
+              if(!foundDesktop || !foundLanding){
+                try{
+                  const b64=execSync('gh api \"repos/'+repo+'/contents/'+fn+'?ref='+headSha+'\" --jq .content', {encoding:'utf8', stdio:['pipe','pipe','pipe']});
+                  const decoded=Buffer.from(b64.replace(/\s/g,''), 'base64').toString('utf8');
+                  if(decoded.includes('@pinax/desktop')) pkgs.add('pinax-desktop');
+                  if(decoded.includes('@pinax/landing')) pkgs.add('pinax-landing');
+                }catch(e){
+                  // ignore fetch errors, keep patch-based result
+                }
+              }
+            }
+            console.log(JSON.stringify([...pkgs]));
+          ")
+          # Validate JSON
+          if ! echo "$PACKAGES_HINT_JSON" | node -e "JSON.parse(require('fs').readFileSync(0,'utf8'))" 2>/dev/null; then
+            echo "::warning::Failed to compute packages-hint, defaulting to []"
+            PACKAGES_HINT_JSON="[]"
+          fi
+          echo "packages-hint=$PACKAGES_HINT_JSON" >> "$GITHUB_OUTPUT"
+          echo "Packages hint (scoped to PR #$PR_NUMBER): $PACKAGES_HINT_JSON"
+          if [ "$PACKAGES_HINT_JSON" = "[]" ]; then
+            echo "::warning::No changeset packages detected in PR #$PR_NUMBER - prerelease will result in Nothing to release."
+            echo "::notice::Hint: ensure the PR adds at least one .changeset/*.md with \"@pinax/desktop\" or \"@pinax/landing\" in frontmatter."
+          fi
+
           # Desktop matrix scope depends on the /prerelease OS argument.
           OS_ARG_LOWER=$(echo "$OS_ARG" | tr '[:upper:]' '[:lower:]')
           case "$OS_ARG_LOWER" in
@@ -99,7 +154,7 @@ jobs:
       ref: ${{ needs.parse.outputs.ref }}
       prerelease: alpha
       short-sha: ${{ needs.parse.outputs.short-sha }}
-      packages-hint: '["pinax-desktop","pinax-landing"]'
+      packages-hint: ${{ needs.parse.outputs.packages-hint }}
       desktop-matrix: ${{ needs.parse.outputs.desktop-matrix }}
     secrets: inherit
 
