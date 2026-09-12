@@ -1,5 +1,15 @@
 # @pinax/landing
 
+## 0.1.6
+
+### Patch Changes
+
+- [#19](https://github.com/fortisuno/pinax/pull/19) [`1db2a0b`](https://github.com/fortisuno/pinax/commit/1db2a0be9cfe269d66be1a2c8a507b9ce6967585) Thanks [@fortisuno](https://github.com/fortisuno)! - Test Optimized CI/CD Pipeline
+
+- [#20](https://github.com/fortisuno/pinax/pull/20) [`646c020`](https://github.com/fortisuno/pinax/commit/646c0202b763c08f0ef61bf7dc06c33a4ccbbc9c) Thanks [@fortisuno](https://github.com/fortisuno)! - Test CI/CD Pipeline
+
+- [#20](https://github.com/fortisuno/pinax/pull/20) [`646c020`](https://github.com/fortisuno/pinax/commit/646c0202b763c08f0ef61bf7dc06c33a4ccbbc9c) Thanks [@fortisuno](https://github.com/fortisuno)! - CI/CD Test for landing page
+
 ## 0.1.5
 
 ### Patch Changes

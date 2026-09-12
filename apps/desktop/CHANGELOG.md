@@ -1,5 +1,19 @@
 # @pinax/desktop
 
+## 0.1.15
+
+### Patch Changes
+
+- [#19](https://github.com/fortisuno/pinax/pull/19) [`1db2a0b`](https://github.com/fortisuno/pinax/commit/1db2a0be9cfe269d66be1a2c8a507b9ce6967585) Thanks [@fortisuno](https://github.com/fortisuno)! - Test Optimized CI/CD Pipeline
+
+- [#16](https://github.com/fortisuno/pinax/pull/16) [`9ff746a`](https://github.com/fortisuno/pinax/commit/9ff746a8518d1fdbf72f789cd8010773e8f26fe3) Thanks [@fortisuno](https://github.com/fortisuno)! - feat: Test CI/CD Pipeline for pinax-desktop
+
+- [#19](https://github.com/fortisuno/pinax/pull/19) [`1db2a0b`](https://github.com/fortisuno/pinax/commit/1db2a0be9cfe269d66be1a2c8a507b9ce6967585) Thanks [@fortisuno](https://github.com/fortisuno)! - Fixed CI/CD issues
+
+- [#19](https://github.com/fortisuno/pinax/pull/19) [`1db2a0b`](https://github.com/fortisuno/pinax/commit/1db2a0be9cfe269d66be1a2c8a507b9ce6967585) Thanks [@fortisuno](https://github.com/fortisuno)! - Test Optimized CI/CD Build
+
+- [#19](https://github.com/fortisuno/pinax/pull/19) [`1db2a0b`](https://github.com/fortisuno/pinax/commit/1db2a0be9cfe269d66be1a2c8a507b9ce6967585) Thanks [@fortisuno](https://github.com/fortisuno)! - Test CI/CD pipeline for Desktop
+
 ## 0.1.14
 
 ### Patch Changes
