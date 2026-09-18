@@ -39,9 +39,10 @@ interface UpdateCriteriaDialogProps {
   title: string
   description: string
   criteria: CriteriaType
-  valueSchema: CriteriaValueSchema
-  valueLabel: string
+  valueSchema?: CriteriaValueSchema
+  valueLabel?: string
   showLabel?: boolean
+  showValue?: boolean
   onUpdate: (updated: CriteriaType) => void
 }
 
@@ -51,9 +52,10 @@ export function UpdateCriteriaDialog({
   title,
   description,
   criteria,
-  valueSchema,
-  valueLabel,
+  valueSchema = criteriaPercentageSchema,
+  valueLabel = "Ponderación (%)",
   showLabel = true,
+  showValue = true,
   onUpdate,
 }: UpdateCriteriaDialogProps) {
   return (
@@ -70,6 +72,7 @@ export function UpdateCriteriaDialog({
             valueSchema={valueSchema}
             valueLabel={valueLabel}
             showLabel={showLabel}
+            showValue={showValue}
             onUpdate={onUpdate}
             onSubmitted={() => onOpenChange(false)}
           />
@@ -84,6 +87,7 @@ function UpdateCriteriaForm({
   valueSchema,
   valueLabel,
   showLabel,
+  showValue,
   onUpdate,
   onSubmitted,
 }: {
@@ -91,6 +95,7 @@ function UpdateCriteriaForm({
   valueSchema: CriteriaValueSchema
   valueLabel: string
   showLabel: boolean
+  showValue: boolean
   onUpdate: (updated: CriteriaType) => void
   onSubmitted: () => void
 }) {
@@ -100,6 +105,11 @@ function UpdateCriteriaForm({
       value: String(criteria.value),
     },
     onSubmit: ({ value }) => {
+      if (!showValue) {
+        onUpdate({ label: value.label, value: criteria.value })
+        onSubmitted()
+        return
+      }
       const parsedValue = valueSchema.parse(value.value)
       const updated: CriteriaType = showLabel
         ? { label: value.label, value: parsedValue }
@@ -150,42 +160,44 @@ function UpdateCriteriaForm({
             }}
           </form.Field>
         ) : null}
-        <form.Field name="value" validators={{ onChange: valueSchema }}>
-          {(field) => {
-            const invalid =
-              field.state.meta.isTouched && !field.state.meta.isValid
-            const isQuantity = valueSchema === criteriaQuantitySchema
-            const fieldProps = {
-              id: field.name,
-              name: field.name,
-              type: "number" as const,
-              min: isQuantity ? 1 : 0,
-              max: isQuantity ? 500 : 100,
-              step: isQuantity ? 1 : ("any" as const),
-              value: field.state.value,
-              onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-                field.handleChange(event.target.value),
-              onBlur: field.handleBlur,
-              "aria-invalid": invalid || undefined,
-            }
-            return (
-              <Field data-invalid={invalid || undefined}>
-                <FieldLabel htmlFor={field.name}>{valueLabel}</FieldLabel>
-                {isQuantity ? (
-                  <Input {...fieldProps} />
-                ) : (
-                  <InputGroup>
-                    <InputGroupInput {...fieldProps} />
-                    <InputGroupAddon align="inline-end">
-                      <span aria-hidden="true">%</span>
-                    </InputGroupAddon>
-                  </InputGroup>
-                )}
-                <FieldError errors={field.state.meta.errors} />
-              </Field>
-            )
-          }}
-        </form.Field>
+        {showValue ? (
+          <form.Field name="value" validators={{ onChange: valueSchema }}>
+            {(field) => {
+              const invalid =
+                field.state.meta.isTouched && !field.state.meta.isValid
+              const isQuantity = valueSchema === criteriaQuantitySchema
+              const fieldProps = {
+                id: field.name,
+                name: field.name,
+                type: "number" as const,
+                min: isQuantity ? 1 : 0,
+                max: isQuantity ? 500 : 100,
+                step: isQuantity ? 1 : ("any" as const),
+                value: field.state.value,
+                onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+                  field.handleChange(event.target.value),
+                onBlur: field.handleBlur,
+                "aria-invalid": invalid || undefined,
+              }
+              return (
+                <Field data-invalid={invalid || undefined}>
+                  <FieldLabel htmlFor={field.name}>{valueLabel}</FieldLabel>
+                  {isQuantity ? (
+                    <Input {...fieldProps} />
+                  ) : (
+                    <InputGroup>
+                      <InputGroupInput {...fieldProps} />
+                      <InputGroupAddon align="inline-end">
+                        <span aria-hidden="true">%</span>
+                      </InputGroupAddon>
+                    </InputGroup>
+                  )}
+                  <FieldError errors={field.state.meta.errors} />
+                </Field>
+              )
+            }}
+          </form.Field>
+        ) : null}
       </FieldGroup>
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" />}>

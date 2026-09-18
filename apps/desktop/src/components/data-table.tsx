@@ -60,6 +60,12 @@ import {
   type StudentStatus,
   type StudentType,
 } from "@/lib/students"
+import {
+  UNIT_BASE_WEIGHT,
+  UNIT_EXAM_WEIGHT,
+  unitGradeKey,
+  type CriteriaType,
+} from "@/lib/evaluation"
 import { exportAndSaveStudentReport } from "@/lib/pdf-export"
 import { useEvaluationStore } from "@/stores/evaluation-store"
 import { useStudentsStore } from "@/stores/students-store"
@@ -67,7 +73,11 @@ import { useStudentsStore } from "@/stores/students-store"
 const TASKS_DELIVERED_LABEL = "Tareas Entregadas"
 const TASKS_LABEL = "Tareas"
 const TASKS_WEIGHTED_LABEL = "Tareas Ponderadas"
-const FINAL_GRADE_LABEL = "Calificación final"
+const BASE_GRADE_LABEL = "Calificación Base"
+const BASE_WEIGHTED_LABEL = "Base Ponderada"
+const EXAM_LABEL = "Examen"
+const EXAM_WEIGHTED_LABEL = "Examen Ponderado"
+const UNIT_FINAL_LABEL = "Final"
 const DELETE_STUDENT_TITLE = "Borrar alumno"
 
 const COMPACT_CELL_CLASS = "px-2 text-center whitespace-nowrap"
@@ -209,10 +219,144 @@ function RowActions({
   )
 }
 
+function BaseColumns({ otherCriteria }: { otherCriteria: CriteriaType[] }) {
+  const criteriaColumns = otherCriteria.flatMap((criterion) => {
+    const rawColumn = columnHelper.display({
+      id: `criteria-${criterion.label}`,
+      header: () => <CriteriaHeader label={criterion.label} />,
+      cell: ({ row }) => (
+        <ScoreValue
+          value={row.original.evaluation?.criteria[criterion.label]}
+        />
+      ),
+      meta: { className: CRITERIA_CELL_CLASS },
+    })
+    const weightedLabel = `${criterion.label} Ponderado`
+    const weightedColumn = columnHelper.display({
+      id: `criteria-${criterion.label}-ponderado`,
+      header: () => <CriteriaHeader label={weightedLabel} />,
+      cell: ({ row }) => (
+        <ScoreValue
+          value={row.original.evaluation?.weightedCriteria[criterion.label]}
+        />
+      ),
+      meta: { className: CRITERIA_CELL_CLASS },
+    })
+    return [rawColumn, weightedColumn]
+  })
+
+  return [
+    columnHelper.accessor("name", {
+      header: "Nombre",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
+    }),
+    columnHelper.display({
+      id: "tasks-delivered",
+      header: () => <CriteriaHeader label={TASKS_DELIVERED_LABEL} />,
+      cell: ({ row }) => (
+        <ScoreValue value={row.original.evaluation?.tasksDelivered} />
+      ),
+      meta: { className: CRITERIA_CELL_CLASS },
+    }),
+    columnHelper.display({
+      id: "tasks",
+      header: () => <CriteriaHeader label={TASKS_LABEL} />,
+      cell: ({ row }) => (
+        <ScoreValue value={row.original.evaluation?.tasksAverage} />
+      ),
+      meta: { className: CRITERIA_CELL_CLASS },
+    }),
+    columnHelper.display({
+      id: "tasks-weighted",
+      header: () => <CriteriaHeader label={TASKS_WEIGHTED_LABEL} />,
+      cell: ({ row }) => (
+        <ScoreValue value={row.original.evaluation?.tasks} />
+      ),
+      meta: { className: CRITERIA_CELL_CLASS },
+    }),
+    ...criteriaColumns,
+    columnHelper.display({
+      id: "base",
+      header: () => <CriteriaHeader label={BASE_GRADE_LABEL} />,
+      cell: ({ row }) => (
+        <span className="font-medium">
+          <ScoreValue
+            value={
+              row.original.evaluation?.base ?? row.original.evaluation?.final
+            }
+          />
+        </span>
+      ),
+      meta: { className: CRITERIA_CELL_CLASS },
+    }),
+    columnHelper.display({
+      id: "base-weighted",
+      header: () => (
+        <CriteriaHeader label={`${BASE_WEIGHTED_LABEL} (${UNIT_BASE_WEIGHT}%)`} />
+      ),
+      cell: ({ row }) => (
+        <ScoreValue value={row.original.evaluation?.baseWeighted} />
+      ),
+      meta: { className: CRITERIA_CELL_CLASS },
+    }),
+  ]
+}
+
+function UnitGroupColumns({ unitCriteria }: { unitCriteria: CriteriaType[] }) {
+  return unitCriteria.map((unit, index) => {
+    const key = unitGradeKey(index)
+    return columnHelper.group({
+      id: `unit-${index}`,
+      header: () => <span className="font-medium">{unit.label}</span>,
+      columns: [
+        columnHelper.display({
+          id: `unit-${index}-exam`,
+          header: () => <CriteriaHeader label={`${EXAM_LABEL} ${unit.label}`} />,
+          cell: ({ row }) => (
+            <ScoreValue value={row.original.evaluation?.units?.[key]?.exam} />
+          ),
+          meta: { className: CRITERIA_CELL_CLASS },
+        }),
+        columnHelper.display({
+          id: `unit-${index}-exam-weighted`,
+          header: () => (
+            <CriteriaHeader
+              label={`${EXAM_WEIGHTED_LABEL} ${unit.label} (${UNIT_EXAM_WEIGHT}%)`}
+            />
+          ),
+          cell: ({ row }) => (
+            <ScoreValue
+              value={row.original.evaluation?.units?.[key]?.examWeighted}
+            />
+          ),
+          meta: { className: CRITERIA_CELL_CLASS },
+        }),
+        columnHelper.display({
+          id: `unit-${index}-final`,
+          header: () => (
+            <CriteriaHeader label={`${UNIT_FINAL_LABEL} ${unit.label}`} />
+          ),
+          cell: ({ row }) => (
+            <span className="font-medium">
+              <ScoreValue
+                value={row.original.evaluation?.units?.[key]?.final}
+              />
+            </span>
+          ),
+          meta: { className: CRITERIA_CELL_CLASS },
+        }),
+      ],
+    })
+  })
+}
+
 export function DataTable() {
   const students = useStudentsStore((state) => state.students)
   const removeStudent = useStudentsStore((state) => state.removeStudent)
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
+  const unitCriteria = useEvaluationStore((state) => state.unitCriteria)
   const assignments = useEvaluationStore((state) => state.assignments)
   const assignmentsPercentageCriteria = useEvaluationStore(
     (state) => state.assignmentsPercentageCriteria
@@ -252,6 +396,7 @@ export function DataTable() {
       try {
         const result = await exportAndSaveStudentReport(student, {
           otherCriteria,
+          unitCriteria,
           assignments,
           assignmentsPercentage: assignmentsPercentageCriteria.value,
         })
@@ -268,6 +413,7 @@ export function DataTable() {
     },
     [
       otherCriteria,
+      unitCriteria,
       assignments,
       assignmentsPercentageCriteria,
     ]
@@ -281,79 +427,19 @@ export function DataTable() {
   }, [deletingStudent, removeStudent])
 
   const columns = React.useMemo(() => {
-    const criteriaColumns = otherCriteria.flatMap((criterion) => {
-      const rawColumn = columnHelper.display({
-        id: `criteria-${criterion.label}`,
-        header: () => <CriteriaHeader label={criterion.label} />,
-        cell: ({ row }) => (
-          <ScoreValue
-            value={row.original.evaluation?.criteria[criterion.label]}
-          />
-        ),
-        meta: { className: CRITERIA_CELL_CLASS },
-      })
-      const weightedLabel = `${criterion.label} Ponderado`
-      const weightedColumn = columnHelper.display({
-        id: `criteria-${criterion.label}-ponderado`,
-        header: () => <CriteriaHeader label={weightedLabel} />,
-        cell: ({ row }) => (
-          <ScoreValue
-            value={row.original.evaluation?.weightedCriteria[criterion.label]}
-          />
-        ),
-        meta: { className: CRITERIA_CELL_CLASS },
-      })
-      return [rawColumn, weightedColumn]
-    })
-
     return columnHelper.columns([
-      columnHelper.accessor("name", {
-        header: "Nombre",
-        cell: ({ row }) => (
-          <span className="font-medium">{row.original.name}</span>
-        ),
-      }),
-      columnHelper.display({
-        id: "tasks-delivered",
-        header: () => <CriteriaHeader label={TASKS_DELIVERED_LABEL} />,
-        cell: ({ row }) => (
-          <ScoreValue value={row.original.evaluation?.tasksDelivered} />
-        ),
-        meta: { className: CRITERIA_CELL_CLASS },
-      }),
-      columnHelper.display({
-        id: "tasks",
-        header: () => <CriteriaHeader label={TASKS_LABEL} />,
-        cell: ({ row }) => (
-          <ScoreValue value={row.original.evaluation?.tasksAverage} />
-        ),
-        meta: { className: CRITERIA_CELL_CLASS },
-      }),
-      columnHelper.display({
-        id: "tasks-weighted",
-        header: () => <CriteriaHeader label={TASKS_WEIGHTED_LABEL} />,
-        cell: ({ row }) => (
-          <ScoreValue value={row.original.evaluation?.tasks} />
-        ),
-        meta: { className: CRITERIA_CELL_CLASS },
-      }),
-      ...criteriaColumns,
-      columnHelper.display({
-        id: "final",
-        header: () => <CriteriaHeader label={FINAL_GRADE_LABEL} />,
-        cell: ({ row }) => (
-          <span className="font-medium">
-            <ScoreValue value={row.original.evaluation?.final} />
-          </span>
-        ),
-        meta: { className: CRITERIA_CELL_CLASS },
-      }),
+      ...BaseColumns({ otherCriteria }),
+      ...UnitGroupColumns({ unitCriteria }),
       columnHelper.display({
         id: "evaluation-icon",
         header: () => <span className="sr-only">Estado de calificación</span>,
         cell: ({ row }) => (
           <div className="flex h-full items-center justify-center">
-            <StatusIcon final={row.original.evaluation?.final} />
+            <StatusIcon
+              final={
+                row.original.evaluation?.base ?? row.original.evaluation?.final
+              }
+            />
           </div>
         ),
         meta: { className: STATUS_ICON_CELL_CLASS },
@@ -381,6 +467,7 @@ export function DataTable() {
     ])
   }, [
     otherCriteria,
+    unitCriteria,
     handleEdit,
     handleEvaluate,
     handleExport,
@@ -400,7 +487,7 @@ export function DataTable() {
         <StudentsToolbar />
       </div>
       <div className="px-4 lg:px-6">
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-muted">
               {table.getHeaderGroups().map((headerGroup) => (

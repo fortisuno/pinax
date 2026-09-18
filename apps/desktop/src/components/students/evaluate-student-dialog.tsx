@@ -29,8 +29,10 @@ import {
 import {
   computeEvaluation,
   gradeSchema,
+  resolveUnitExam,
   type StudentType,
 } from "@/lib/students"
+import { unitGradeKey } from "@/lib/evaluation"
 import { useEvaluationStore } from "@/stores/evaluation-store"
 import { useStudentsStore } from "@/stores/students-store"
 
@@ -77,6 +79,7 @@ function EvaluateStudentForm({
     (state) => state.assignmentsPercentageCriteria
   )
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
+  const unitCriteria = useEvaluationStore((state) => state.unitCriteria)
   const saveEvaluation = useStudentsStore((state) => state.saveEvaluation)
 
   const assignmentsCount = assignments.length
@@ -97,6 +100,9 @@ function EvaluateStudentForm({
           ? String(student.criteriaGrades[criterion.label])
           : "0"
       ),
+      units: unitCriteria.map((unit, index) =>
+        String(resolveUnitExam(student.unitGrades, index, unit.label))
+      ),
     },
     onSubmit: ({ value }) => {
       const assignmentGrades = value.assignments.map((grade) =>
@@ -108,15 +114,24 @@ function EvaluateStudentForm({
           value.criteria[index] ?? "0"
         )
       })
+      const unitGrades: Record<string, number> = {}
+      unitCriteria.forEach((_, index) => {
+        unitGrades[unitGradeKey(index)] = gradeSchema.parse(
+          value.units[index] ?? "0"
+        )
+      })
       const evaluation = computeEvaluation({
         assignmentGrades,
         criteriaGrades,
+        unitGrades,
         assignmentsPercentage: assignmentsPercentageCriteria.value,
         otherCriteria,
+        unitCriteria,
       })
       saveEvaluation(student.id, {
         assignmentGrades,
         criteriaGrades,
+        unitGrades,
         evaluation,
       })
       onSubmitted()
@@ -220,6 +235,27 @@ function EvaluateStudentForm({
             </div>
           </FieldSet>
         ) : null}
+        <FieldSet>
+          <FieldLegend>Unidades de aprendizaje</FieldLegend>
+          <div className="grid grid-cols-1 gap-3">
+            {unitCriteria.map((unit, index, array) => (
+              <React.Fragment key={unitGradeKey(index)}>
+                <form.Field
+                  name={`units[${index}]`}
+                  validators={{ onChange: gradeSchema }}
+                >
+                  {(field) => (
+                    <GradeField
+                      field={field}
+                      label={`Examen ${unit.label}`}
+                    />
+                  )}
+                </form.Field>
+                {index < array.length - 1 ? <Separator /> : null}
+              </React.Fragment>
+            ))}
+          </div>
+        </FieldSet>
       </div>
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" />}>

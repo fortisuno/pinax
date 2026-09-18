@@ -86,6 +86,7 @@ export function StudentsToolbar() {
   const clearStudents = useStudentsStore((state) => state.clearStudents)
   const students = useStudentsStore((state) => state.students)
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
+  const unitCriteria = useEvaluationStore((state) => state.unitCriteria)
   const assignments = useEvaluationStore((state) => state.assignments)
   const assignmentsPercentageCriteria = useEvaluationStore(
     (state) => state.assignmentsPercentageCriteria
@@ -124,6 +125,7 @@ export function StudentsToolbar() {
     try {
       const result = await exportAndSaveGroupReport(students, {
         otherCriteria,
+        unitCriteria,
         assignments,
         assignmentsPercentage: assignmentsPercentageCriteria.value,
       })
@@ -143,6 +145,7 @@ export function StudentsToolbar() {
     students,
     allStudentsEvaluated,
     otherCriteria,
+    unitCriteria,
     assignments,
     assignmentsPercentageCriteria,
   ])

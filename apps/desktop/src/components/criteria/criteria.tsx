@@ -95,4 +95,29 @@ function CriteriaMenuItem({
   )
 }
 
-export { Criteria, CriteriaMenu, CriteriaMenuItem }
+function UnitCriteriaItem({
+  label,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<typeof Item>, "children"> & {
+  label: string
+  children?: React.ReactNode
+}) {
+  return (
+    <Item
+      data-slot="unit-criteria"
+      size="xs"
+      variant="muted"
+      className={cn(className)}
+      {...props}
+    >
+      <ItemContent>
+        <ItemTitle>{label}</ItemTitle>
+      </ItemContent>
+      {children ? <ItemActions>{children}</ItemActions> : null}
+    </Item>
+  )
+}
+
+export { Criteria, CriteriaMenu, CriteriaMenuItem, UnitCriteriaItem }

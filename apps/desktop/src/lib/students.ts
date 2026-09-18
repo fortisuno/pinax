@@ -1,8 +1,19 @@
 import { z } from "zod"
 
-import type { CriteriaType } from "@/lib/evaluation"
+import {
+  UNIT_BASE_WEIGHT,
+  UNIT_EXAM_WEIGHT,
+  unitGradeKey,
+  type CriteriaType,
+} from "@/lib/evaluation"
 
 export type StudentStatus = "not-evaluated" | "evaluated"
+
+export interface UnitResult {
+  exam: number
+  examWeighted: number
+  final: number
+}
 
 export interface StudentEvaluation {
   tasksDelivered: number
@@ -10,6 +21,9 @@ export interface StudentEvaluation {
   tasks: number
   criteria: Record<string, number>
   weightedCriteria: Record<string, number>
+  base: number
+  baseWeighted: number
+  units: Record<string, UnitResult>
   final: number
 }
 
@@ -19,6 +33,7 @@ export interface StudentType {
   status: StudentStatus
   assignmentGrades: number[]
   criteriaGrades: Record<string, number>
+  unitGrades: Record<string, number>
   evaluation: StudentEvaluation | null
 }
 
@@ -46,6 +61,7 @@ export function createStudent(name: string): StudentType {
     status: "not-evaluated",
     assignmentGrades: [],
     criteriaGrades: {},
+    unitGrades: {},
     evaluation: null,
   }
 }
@@ -66,16 +82,33 @@ export function countTasksDelivered(assignmentGrades: number[]): number {
   return assignmentGrades.filter((grade) => grade !== 0).length
 }
 
+export function resolveUnitExam(
+  unitGrades: Record<string, number> | undefined,
+  index: number,
+  label: string
+): number {
+  const grades = unitGrades ?? {}
+  const byIndex = grades[unitGradeKey(index)]
+  if (byIndex !== undefined) return byIndex
+  const byLabel = grades[label]
+  if (byLabel !== undefined) return byLabel
+  return 0
+}
+
 export function computeEvaluation({
   assignmentGrades,
   criteriaGrades,
+  unitGrades = {},
   assignmentsPercentage,
   otherCriteria,
+  unitCriteria = [],
 }: {
   assignmentGrades: number[]
   criteriaGrades: Record<string, number>
+  unitGrades?: Record<string, number>
   assignmentsPercentage: number
   otherCriteria: CriteriaType[]
+  unitCriteria?: CriteriaType[]
 }): StudentEvaluation {
   const totalAssignments = assignmentGrades.length
   const assignmentsSum = assignmentGrades.reduce(
@@ -88,14 +121,27 @@ export function computeEvaluation({
 
   const criteria: Record<string, number> = {}
   const weightedCriteria: Record<string, number> = {}
-  let final = tasks
+  let base = tasks
   for (const criterion of otherCriteria) {
     const grade = criteriaGrades[criterion.label] ?? 0
     criteria[criterion.label] = grade
     const weighted = grade * (criterion.value / 100)
     weightedCriteria[criterion.label] = weighted
-    final += weighted
+    base += weighted
   }
+
+  // Base ponderada al 70%. Clave estable para unitGrades: índice ("0".."3")
+  // con fallback a label vigente, así un renombrado de "Unidad N" no pierde notas.
+  const baseWeighted = base * (UNIT_BASE_WEIGHT / 100)
+
+  const units: Record<string, UnitResult> = {}
+  unitCriteria.forEach((unit, index) => {
+    const key = unitGradeKey(index)
+    const exam = resolveUnitExam(unitGrades, index, unit.label)
+    const examWeighted = exam * (UNIT_EXAM_WEIGHT / 100)
+    const final = baseWeighted + examWeighted
+    units[key] = { exam, examWeighted, final }
+  })
 
   return {
     tasksDelivered: countTasksDelivered(assignmentGrades),
@@ -103,6 +149,10 @@ export function computeEvaluation({
     tasks,
     criteria,
     weightedCriteria,
-    final,
+    base,
+    baseWeighted,
+    units,
+    // final legacy = base para compatibilidad (StatusIcon, promedio, statusLabel).
+    final: base,
   }
 }

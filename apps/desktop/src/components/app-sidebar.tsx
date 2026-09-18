@@ -13,6 +13,7 @@ import {
   Criteria,
   CriteriaMenu,
   CriteriaMenuItem,
+  UnitCriteriaItem,
 } from "@/components/criteria/criteria"
 import {
   CriteriaGroup,
@@ -55,6 +56,7 @@ import { useEvaluationStore } from "@/stores/evaluation-store"
 type EditingTarget =
   | { kind: "other"; index: number }
   | { kind: "assignmentsPercentage" }
+  | { kind: "unit"; index: number }
   | null
 
 type DeletingTarget = { index: number; label: string } | null
@@ -65,6 +67,9 @@ const OTHER_CRITERIA_DESCRIPTION =
 const ASSIGNMENTS_PERCENTAGE_TITLE = "Editar ponderación de tareas"
 const ASSIGNMENTS_PERCENTAGE_DESCRIPTION =
   "Modifica la ponderación que representan las tareas en la evaluación."
+const UNIT_CRITERIA_TITLE = "Editar unidad"
+const UNIT_CRITERIA_DESCRIPTION =
+  "Actualiza el nombre de esta unidad de aprendizaje."
 const DELETE_OTHER_CRITERIA_TITLE = "Borrar criterio"
 const DELETE_OTHER_CRITERIA_DESCRIPTION =
   "¿Estás seguro de que quieres borrar este criterio? Esta acción no se puede deshacer."
@@ -78,6 +83,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     (state) => state.assignmentsPercentageCriteria
   )
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
+  const unitCriteria = useEvaluationStore((state) => state.unitCriteria)
   const removeOtherCriteria = useEvaluationStore(
     (state) => state.removeOtherCriteria
   )
@@ -86,6 +92,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   )
   const updateOtherCriteria = useEvaluationStore(
     (state) => state.updateOtherCriteria
+  )
+  const updateUnitCriteria = useEvaluationStore(
+    (state) => state.updateUnitCriteria
   )
 
   const [addCriteriaDialogOpen, setAddCriteriaDialogOpen] =
@@ -125,8 +134,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     editingTarget,
     otherCriteria,
     assignmentsPercentageCriteria,
+    unitCriteria,
     updateOtherCriteria,
     setAssignmentsPercentageCriteria,
+    updateUnitCriteria,
     closeEditing,
   })
 
@@ -218,6 +229,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ))}
           </CriteriaGroupContent>
         </CriteriaGroup>
+        <CriteriaGroup>
+          <CriteriaGroupHeader>
+            <CriteriaGroupLabel>Unidades de aprendizaje</CriteriaGroupLabel>
+          </CriteriaGroupHeader>
+          <CriteriaGroupContent>
+            {unitCriteria.map((criteria, index) => (
+              <UnitCriteriaItem key={"uc_" + index} label={criteria.label}>
+                <CriteriaMenu>
+                  <CriteriaMenuItem
+                    onClick={() => setEditingTarget({ kind: "unit", index })}
+                  >
+                    <PencilIcon />
+                    <span>Editar</span>
+                  </CriteriaMenuItem>
+                </CriteriaMenu>
+              </UnitCriteriaItem>
+            ))}
+          </CriteriaGroupContent>
+        </CriteriaGroup>
       </SidebarContent>
       <SidebarFooter>
         <PonderacionAlert totalPercentage={totalPercentage} />
@@ -257,15 +287,19 @@ function renderEditingDialog({
   editingTarget,
   otherCriteria,
   assignmentsPercentageCriteria,
+  unitCriteria,
   updateOtherCriteria,
   setAssignmentsPercentageCriteria,
+  updateUnitCriteria,
   closeEditing,
 }: {
   editingTarget: EditingTarget
   otherCriteria: CriteriaType[]
   assignmentsPercentageCriteria: CriteriaType
+  unitCriteria: CriteriaType[]
   updateOtherCriteria: (index: number, criteria: CriteriaType) => void
   setAssignmentsPercentageCriteria: (criteria: CriteriaType) => void
+  updateUnitCriteria: (index: number, criteria: CriteriaType) => void
   closeEditing: (open: boolean) => void
 }) {
   switch (editingTarget?.kind) {
@@ -301,6 +335,23 @@ function renderEditingDialog({
           onUpdate={setAssignmentsPercentageCriteria}
         />
       )
+    case "unit": {
+      const index = editingTarget.index
+      const target = unitCriteria[index]
+      if (!target) return null
+      return (
+        <UpdateCriteriaDialog
+          open
+          onOpenChange={closeEditing}
+          title={UNIT_CRITERIA_TITLE}
+          description={UNIT_CRITERIA_DESCRIPTION}
+          criteria={target}
+          showLabel
+          showValue={false}
+          onUpdate={(updated) => updateUnitCriteria(index, updated)}
+        />
+      )
+    }
     default:
       return null
   }

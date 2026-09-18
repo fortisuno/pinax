@@ -7,6 +7,8 @@ import {
   DEFAULT_ASSIGNMENTS_PERCENTAGE_CRITERIA,
   DEFAULT_ASSIGNMENTS_QUANTITY_CRITERIA,
   DEFAULT_OTHER_CRITERIA,
+  DEFAULT_UNIT_CRITERIA,
+  UNIT_FINAL_VALUE,
   type Assignment,
   type CriteriaType,
 } from "@/lib/evaluation"
@@ -16,6 +18,7 @@ interface EvaluationState {
   assignmentsQuantityCriteria: CriteriaType
   assignmentsPercentageCriteria: CriteriaType
   otherCriteria: CriteriaType[]
+  unitCriteria: CriteriaType[]
 }
 
 interface EvaluationActions {
@@ -26,6 +29,7 @@ interface EvaluationActions {
   addOtherCriteria: (criteria: CriteriaType) => void
   updateOtherCriteria: (index: number, criteria: CriteriaType) => void
   removeOtherCriteria: (index: number) => void
+  updateUnitCriteria: (index: number, unitCriteria: CriteriaType) => void
 }
 
 export type EvaluationStore = EvaluationState & EvaluationActions
@@ -38,6 +42,7 @@ const createEvaluationStore = () =>
         assignmentsQuantityCriteria: DEFAULT_ASSIGNMENTS_QUANTITY_CRITERIA,
         assignmentsPercentageCriteria: DEFAULT_ASSIGNMENTS_PERCENTAGE_CRITERIA,
         otherCriteria: DEFAULT_OTHER_CRITERIA,
+        unitCriteria: DEFAULT_UNIT_CRITERIA.map((unit) => ({ ...unit })),
         addAssignment: (assignment) =>
           set((state) => ({
             assignments: [...state.assignments, assignment],
@@ -83,37 +88,57 @@ const createEvaluationStore = () =>
               (_, itemIndex) => itemIndex !== index
             ),
           })),
+        updateUnitCriteria: (index, unitCriteria) =>
+          set((state) => ({
+            unitCriteria: state.unitCriteria.map((item, itemIndex) =>
+              itemIndex === index
+                ? { label: unitCriteria.label, value: UNIT_FINAL_VALUE }
+                : item
+            ),
+          })),
       }),
       {
         name: "pinax-evaluation",
         storage: createJSONStorage(() => localStorage),
-        version: 2,
+        version: 3,
         migrate: (persistedState, version) => {
           const state = persistedState as Record<string, unknown> | undefined
           if (!state) return state as never
+          let next = state as Record<string, unknown>
           if (
             version === 0 ||
-            !("assignments" in state) ||
-            !Array.isArray(state["assignments"])
+            !("assignments" in next) ||
+            !Array.isArray(next["assignments"])
           ) {
-            const quantityCriteria = state["assignmentsQuantityCriteria"] as
+            const quantityCriteria = next["assignmentsQuantityCriteria"] as
               | CriteriaType
               | undefined
-            return {
-              ...state,
+            next = {
+              ...next,
               assignments: [],
               assignmentsQuantityCriteria: quantityCriteria
                 ? { ...quantityCriteria, value: 0 }
                 : { ...DEFAULT_ASSIGNMENTS_QUANTITY_CRITERIA, value: 0 },
-            } as never
+            }
           }
-          return state as never
+          if (
+            version < 3 ||
+            !("unitCriteria" in next) ||
+            !Array.isArray(next["unitCriteria"])
+          ) {
+            next = {
+              ...next,
+              unitCriteria: DEFAULT_UNIT_CRITERIA.map((unit) => ({ ...unit })),
+            }
+          }
+          return next as never
         },
         partialize: (state) => ({
           assignments: state.assignments,
           assignmentsQuantityCriteria: state.assignmentsQuantityCriteria,
           assignmentsPercentageCriteria: state.assignmentsPercentageCriteria,
           otherCriteria: state.otherCriteria,
+          unitCriteria: state.unitCriteria,
         }),
       }
     )

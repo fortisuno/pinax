@@ -68,3 +68,18 @@ export const DEFAULT_ASSIGNMENTS_PERCENTAGE_CRITERIA: CriteriaType = {
 }
 
 export const DEFAULT_OTHER_CRITERIA: CriteriaType[] = []
+
+export const UNIT_BASE_WEIGHT = 70
+export const UNIT_EXAM_WEIGHT = 30
+export const UNIT_FINAL_VALUE = 30
+
+export const DEFAULT_UNIT_CRITERIA: CriteriaType[] = [
+  { label: "Unidad 1", value: UNIT_FINAL_VALUE },
+  { label: "Unidad 2", value: UNIT_FINAL_VALUE },
+  { label: "Unidad 3", value: UNIT_FINAL_VALUE },
+  { label: "Unidad 4", value: UNIT_FINAL_VALUE },
+]
+
+export function unitGradeKey(index: number): string {
+  return String(index)
+}

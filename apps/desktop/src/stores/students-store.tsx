@@ -21,12 +21,17 @@ interface StudentsActions {
     payload: {
       assignmentGrades: number[]
       criteriaGrades: Record<string, number>
+      unitGrades: Record<string, number>
       evaluation: StudentEvaluation
     }
   ) => void
   replaceStudentEvaluation: (
     id: string,
-    payload: { assignmentGrades: number[]; evaluation: StudentEvaluation }
+    payload: {
+      assignmentGrades: number[]
+      unitGrades?: Record<string, number>
+      evaluation: StudentEvaluation
+    }
   ) => void
   clearEvaluations: () => void
   clearStudents: () => void
@@ -53,7 +58,10 @@ const createStudentsStore = () =>
           set((state) => ({
             students: state.students.filter((student) => student.id !== id),
           })),
-        saveEvaluation: (id, { assignmentGrades, criteriaGrades, evaluation }) =>
+        saveEvaluation: (
+          id,
+          { assignmentGrades, criteriaGrades, unitGrades, evaluation }
+        ) =>
           set((state) => ({
             students: state.students.map((student) =>
               student.id === id
@@ -62,16 +70,22 @@ const createStudentsStore = () =>
                     status: "evaluated",
                     assignmentGrades,
                     criteriaGrades,
+                    unitGrades,
                     evaluation,
                   }
                 : student
             ),
           })),
-        replaceStudentEvaluation: (id, { assignmentGrades, evaluation }) =>
+        replaceStudentEvaluation: (id, { assignmentGrades, unitGrades, evaluation }) =>
           set((state) => ({
             students: state.students.map((student) =>
               student.id === id
-                ? { ...student, assignmentGrades, evaluation }
+                ? {
+                    ...student,
+                    assignmentGrades,
+                    unitGrades: unitGrades ?? student.unitGrades ?? {},
+                    evaluation,
+                  }
                 : student
             ),
           })),
@@ -82,6 +96,7 @@ const createStudentsStore = () =>
               status: "not-evaluated",
               assignmentGrades: [],
               criteriaGrades: {},
+              unitGrades: {},
               evaluation: null,
             })),
           })),
@@ -90,6 +105,23 @@ const createStudentsStore = () =>
       {
         name: "pinax-students",
         storage: createJSONStorage(() => localStorage),
+        version: 1,
+        migrate: (persistedState) => {
+          const state = persistedState as Record<string, unknown> | undefined
+          if (!state) return state as never
+          const students = state["students"]
+          if (!Array.isArray(students)) return state as never
+          return {
+            ...state,
+            students: students.map((student) => {
+              const item = student as Record<string, unknown>
+              if (!("unitGrades" in item) || typeof item["unitGrades"] !== "object" || item["unitGrades"] === null) {
+                return { ...item, unitGrades: {} }
+              }
+              return item
+            }),
+          } as never
+        },
         partialize: (state) => ({
           students: state.students,
         }),

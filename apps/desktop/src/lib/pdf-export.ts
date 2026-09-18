@@ -7,17 +7,29 @@ import {
   type StudentEvaluation,
   type StudentType,
 } from "@/lib/students"
-import type { Assignment, CriteriaType } from "@/lib/evaluation"
+import {
+  UNIT_BASE_WEIGHT,
+  UNIT_EXAM_WEIGHT,
+  unitGradeKey,
+  type Assignment,
+  type CriteriaType,
+} from "@/lib/evaluation"
 
 const PAGE_FORMAT = "letter" as const
 const PAGE_ORIENTATION = "portrait" as const
 const MARGIN_MM = 15
+const UNIT_INDENT_MM = 4
 
 const DASH = "—"
 const PASS_THRESHOLD = 6
 const TASKS_DELIVERED_LABEL = "Tareas Entregadas"
 const TASKS_LABEL = "Tareas"
 const TASKS_WEIGHTED_LABEL = "Calificación Tareas"
+const BASE_GRADE_LABEL = "Calificación Base"
+const BASE_WEIGHTED_LABEL = "Calificación Base Ponderada"
+const EXAM_LABEL = "Examen"
+const EXAM_WEIGHTED_LABEL = "Examen Ponderado"
+const UNIT_FINAL_LABEL = "Calificación Final"
 const FINAL_GRADE_LABEL = "Calificación final"
 const STATUS_LABEL = "Estado"
 const PASS_TEXT = "Aprobado"
@@ -41,6 +53,7 @@ export interface ExportContext {
   otherCriteria: CriteriaType[]
   assignments: Assignment[]
   assignmentsPercentage: number
+  unitCriteria: CriteriaType[]
 }
 
 export interface SavePdfResult {
@@ -48,16 +61,26 @@ export interface SavePdfResult {
   path?: string
 }
 
+export function unitAbbreviation(index: number): string {
+  return `U${index + 1}`
+}
+
 export function buildSummaryTableData(
   students: StudentType[],
   ctx: ExportContext
 ) {
+  const unitCriteria = ctx.unitCriteria ?? []
   const head: string[] = ["Nombre", "TE", "T", "TP"]
   for (const criterion of ctx.otherCriteria) {
     head.push(getInitials(criterion.label))
     head.push(`${getInitials(criterion.label)} P`)
   }
-  head.push("CF", "Estado")
+  head.push("CB", "CBP")
+  unitCriteria.forEach((_, index) => {
+    const abbr = unitAbbreviation(index)
+    head.push(abbr, `${abbr}P`, `${abbr}F`)
+  })
+  head.push("Estado")
 
   const body = students.map((student) => {
     const evaluation = student.evaluation
@@ -82,10 +105,28 @@ export function buildSummaryTableData(
       }
     }
     if (evaluation) {
-      row.push(formatScore(evaluation.final))
-      row.push(evaluation.final >= PASS_THRESHOLD ? PASS_TEXT : FAIL_TEXT)
+      const base = evaluation.base ?? evaluation.final
+      const baseWeighted = evaluation.baseWeighted ?? 0
+      row.push(formatScore(base), formatScore(baseWeighted))
     } else {
       row.push(DASH, DASH)
+    }
+    unitCriteria.forEach((_, index) => {
+      if (evaluation) {
+        const unit = evaluation.units?.[unitGradeKey(index)]
+        row.push(
+          formatScoreOrDash(unit?.exam),
+          formatScoreOrDash(unit?.examWeighted),
+          formatScoreOrDash(unit?.final)
+        )
+      } else {
+        row.push(DASH, DASH, DASH)
+      }
+    })
+    if (evaluation) {
+      row.push(evaluation.final >= PASS_THRESHOLD ? PASS_TEXT : FAIL_TEXT)
+    } else {
+      row.push(DASH)
     }
     return row
   })
@@ -94,7 +135,11 @@ export function buildSummaryTableData(
     { abbreviation: "TE", meaning: TASKS_DELIVERED_LABEL },
     { abbreviation: "T", meaning: TASKS_LABEL },
     { abbreviation: "TP", meaning: TASKS_WEIGHTED_LABEL },
-    { abbreviation: "CF", meaning: FINAL_GRADE_LABEL },
+    { abbreviation: "CB", meaning: BASE_GRADE_LABEL },
+    {
+      abbreviation: "CBP",
+      meaning: `${BASE_WEIGHTED_LABEL} (${UNIT_BASE_WEIGHT}%)`,
+    },
   ]
   for (const criterion of ctx.otherCriteria) {
     legend.push({
@@ -106,6 +151,18 @@ export function buildSummaryTableData(
       meaning: `${criterion.label} Ponderado`,
     })
   }
+  unitCriteria.forEach((unit, index) => {
+    const abbr = unitAbbreviation(index)
+    legend.push({ abbreviation: abbr, meaning: `${unit.label} ${EXAM_LABEL}` })
+    legend.push({
+      abbreviation: `${abbr}P`,
+      meaning: `${unit.label} ${EXAM_WEIGHTED_LABEL} (${UNIT_EXAM_WEIGHT}%)`,
+    })
+    legend.push({
+      abbreviation: `${abbr}F`,
+      meaning: `${unit.label} ${UNIT_FINAL_LABEL}`,
+    })
+  })
 
   return { head, body, legend }
 }
@@ -188,15 +245,22 @@ function drawNotePage(
   ctx: ExportContext
 ): void {
   const pageWidth = doc.internal.pageSize.getWidth()
+  const unitCriteria = ctx.unitCriteria ?? []
 
   let cursorY = drawNoteHeader(doc, student.name)
 
-  const labelValueRow = (label: string, value: string, emphasize = false) => {
+  const labelValueRow = (
+    label: string,
+    value: string,
+    options?: { emphasize?: boolean; indentX?: number }
+  ) => {
+    const emphasize = options?.emphasize ?? false
+    const indentX = options?.indentX ?? 0
     cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.name)
     doc.setFont("helvetica", emphasize ? "bold" : "normal")
     doc.setFontSize(NOTE_LABEL_SIZE)
     doc.setTextColor(...PRIMARY_COLOR)
-    doc.text(label, MARGIN_MM, cursorY)
+    doc.text(label, MARGIN_MM + indentX, cursorY)
 
     doc.setFont("helvetica", emphasize ? "bold" : "normal")
     doc.setFontSize(NOTE_LABEL_SIZE)
@@ -204,6 +268,29 @@ function drawNotePage(
     doc.text(value, pageWidth - MARGIN_MM, cursorY, { align: "right" })
 
     cursorY += NOTE_LINE_HEIGHT
+  }
+
+  const drawSeparatorLine = () => {
+    cursorY = ensureNoteSpace(doc, cursorY, 4, student.name)
+    cursorY += 2
+    doc.setDrawColor(...MUTED_COLOR)
+    doc.setLineWidth(0.2)
+    doc.line(MARGIN_MM, cursorY, pageWidth - MARGIN_MM, cursorY)
+    cursorY += 4
+  }
+
+  const drawUnitDivider = () => {
+    cursorY = ensureNoteSpace(doc, cursorY, 4, student.name)
+    cursorY += 1
+    doc.setDrawColor(...DESCRIPTION_COLOR)
+    doc.setLineWidth(0.1)
+    doc.line(
+      MARGIN_MM + UNIT_INDENT_MM,
+      cursorY,
+      pageWidth - MARGIN_MM,
+      cursorY
+    )
+    cursorY += 4
   }
 
   const labelValueRowAtomic = (rows: { label: string; value: string }[]) => {
@@ -278,11 +365,16 @@ function drawNotePage(
   cursorY += 2
 
   if (evaluation) {
-    labelValueRow(TASKS_DELIVERED_LABEL, String(evaluation.tasksDelivered))
+    const base = evaluation.base ?? evaluation.final
+    const baseWeighted = evaluation.baseWeighted ?? 0
+    labelValueRow(TASKS_DELIVERED_LABEL, String(evaluation.tasksDelivered), {
+      emphasize: true,
+    })
     labelValueRow(TASKS_LABEL, formatScoreOrDash(evaluation.tasksAverage))
     labelValueRow(
-      `${TASKS_WEIGHTED_LABEL} (${ctx.assignmentsPercentage}%)`,
-      formatScoreOrDash(evaluation.tasks)
+      `${TASKS_WEIGHTED_LABEL} P. (${ctx.assignmentsPercentage}%)`,
+      formatScoreOrDash(evaluation.tasks),
+      { emphasize: true }
     )
     for (const criterion of ctx.otherCriteria) {
       labelValueRow(
@@ -290,28 +382,77 @@ function drawNotePage(
         formatScoreOrDash(evaluation.criteria[criterion.label])
       )
       labelValueRow(
-        `Calificación ${criterion.label} Ponderado (${criterion.value}%)`,
-        formatScoreOrDash(evaluation.weightedCriteria[criterion.label])
+        `Calificación ${criterion.label} P. (${criterion.value}%)`,
+        formatScoreOrDash(evaluation.weightedCriteria[criterion.label]),
+        { emphasize: true }
       )
     }
+    labelValueRow(BASE_GRADE_LABEL, formatScoreOrDash(base))
+    labelValueRow(
+      `${BASE_WEIGHTED_LABEL} (${UNIT_BASE_WEIGHT}%)`,
+      formatScoreOrDash(baseWeighted),
+      { emphasize: true }
+    )
+    drawSeparatorLine()
+    unitCriteria.forEach((unit, index) => {
+      const unitResult = evaluation.units?.[unitGradeKey(index)]
+      labelValueRow(unit.label.toUpperCase(), "", { emphasize: true })
+      labelValueRow(EXAM_LABEL, formatScoreOrDash(unitResult?.exam), {
+        indentX: UNIT_INDENT_MM,
+      })
+      labelValueRow(
+        `${EXAM_WEIGHTED_LABEL} P. (${UNIT_EXAM_WEIGHT}%)`,
+        formatScoreOrDash(unitResult?.examWeighted),
+        { emphasize: true, indentX: UNIT_INDENT_MM }
+      )
+      labelValueRow(
+        UNIT_FINAL_LABEL,
+        formatScoreOrDash(unitResult?.final),
+        { emphasize: true, indentX: UNIT_INDENT_MM }
+      )
+      if (index < unitCriteria.length - 1) drawUnitDivider()
+    })
+    cursorY += 2
     labelValueRowAtomic([
       { label: FINAL_GRADE_LABEL, value: formatScoreOrDash(evaluation.final) },
       { label: STATUS_LABEL, value: statusLabelFor(evaluation) },
     ])
   } else {
-    labelValueRow(TASKS_DELIVERED_LABEL, DASH)
+    labelValueRow(TASKS_DELIVERED_LABEL, DASH, { emphasize: true })
     labelValueRow(TASKS_LABEL, DASH)
     labelValueRow(
-      `${TASKS_WEIGHTED_LABEL} (${ctx.assignmentsPercentage}%)`,
-      DASH
+      `${TASKS_WEIGHTED_LABEL} P. (${ctx.assignmentsPercentage}%)`,
+      DASH,
+      { emphasize: true }
     )
     for (const criterion of ctx.otherCriteria) {
       labelValueRow(`Calificación ${criterion.label}`, DASH)
       labelValueRow(
-        `Calificación ${criterion.label} Ponderado (${criterion.value}%)`,
-        DASH
+        `Calificación ${criterion.label} P. (${criterion.value}%)`,
+        DASH,
+        { emphasize: true }
       )
     }
+    labelValueRow(BASE_GRADE_LABEL, DASH)
+    labelValueRow(`${BASE_WEIGHTED_LABEL} (${UNIT_BASE_WEIGHT}%)`, DASH, {
+      emphasize: true,
+    })
+    drawSeparatorLine()
+    unitCriteria.forEach((unit, index) => {
+      labelValueRow(unit.label.toUpperCase(), "", { emphasize: true })
+      labelValueRow(EXAM_LABEL, DASH, { indentX: UNIT_INDENT_MM })
+      labelValueRow(
+        `${EXAM_WEIGHTED_LABEL} P. (${UNIT_EXAM_WEIGHT}%)`,
+        DASH,
+        { emphasize: true, indentX: UNIT_INDENT_MM }
+      )
+      labelValueRow(UNIT_FINAL_LABEL, DASH, {
+        emphasize: true,
+        indentX: UNIT_INDENT_MM,
+      })
+      if (index < unitCriteria.length - 1) drawUnitDivider()
+    })
+    cursorY += 2
     labelValueRowAtomic([
       { label: FINAL_GRADE_LABEL, value: DASH },
       { label: STATUS_LABEL, value: statusLabelFor(evaluation) },
@@ -348,7 +489,7 @@ function drawSummaryPage(
     theme: "grid",
     styles: {
       font: "helvetica",
-      fontSize: 8,
+      fontSize: head.length > 12 ? 7 : 8,
       cellPadding: 2,
       textColor: PRIMARY_COLOR,
       lineColor: [220, 220, 220],
