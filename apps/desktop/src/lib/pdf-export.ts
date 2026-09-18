@@ -35,7 +35,7 @@ const NOTE_LINE_HEIGHT = 6
 const NOTE_HEADING_SIZE = 14
 const NOTE_LABEL_SIZE = 10
 const NOTE_FOOTER_SIZE = 8
-const FOOTER_RESERVE_MM = 12
+const FOOTER_RESERVE_MM = 7
 
 export interface ExportContext {
   otherCriteria: CriteriaType[]
@@ -132,7 +132,7 @@ function drawNoteHeader(doc: jsPDF, studentName: string): number {
 
   doc.setDrawColor(...ACCENT_COLOR)
   doc.setLineWidth(0.4)
-  const headingBottom = MARGIN_MM + 8
+  const headingBottom = MARGIN_MM + 6
   doc.line(MARGIN_MM, headingBottom, pageWidth - MARGIN_MM, headingBottom)
 
   return headingBottom + 8
