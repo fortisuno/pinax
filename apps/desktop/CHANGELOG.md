@@ -1,5 +1,13 @@
 # @pinax/desktop
 
+## 0.1.16
+
+### Patch Changes
+
+- [#19](https://github.com/fortisuno/pinax/pull/19) [`1db2a0b`](https://github.com/fortisuno/pinax/commit/1db2a0be9cfe269d66be1a2c8a507b9ce6967585) Thanks [@fortisuno](https://github.com/fortisuno)! - Test CI/CD en linux
+
+- [#19](https://github.com/fortisuno/pinax/pull/19) [`1db2a0b`](https://github.com/fortisuno/pinax/commit/1db2a0be9cfe269d66be1a2c8a507b9ce6967585) Thanks [@fortisuno](https://github.com/fortisuno)! - Test 2 de CI en linux
+
 ## 0.1.15
 
 ### Patch Changes
