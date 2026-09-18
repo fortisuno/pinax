@@ -1,5 +1,17 @@
 # @pinax/desktop
 
+## 0.2.0
+
+### Minor Changes
+
+- [#31](https://github.com/fortisuno/pinax/pull/31) [`281f2c9`](https://github.com/fortisuno/pinax/commit/281f2c94729ea2b96b8aa1910e107cc86c03d531) Thanks [@fortisuno](https://github.com/fortisuno)! - Reemplaza la cantidad numérica de tareas por una lista de tareas con descripción. Agrega el diálogo Gestionar tareas, muestra la descripción con tooltip al calificar y la incluye en el PDF exportado.
+
+### Patch Changes
+
+- [#29](https://github.com/fortisuno/pinax/pull/29) [`004d069`](https://github.com/fortisuno/pinax/commit/004d0690c25415bf3ce6d5d5f5df8ba88b5fa6d2) Thanks [@fortisuno](https://github.com/fortisuno)! - Test prerelease
+
+- [#31](https://github.com/fortisuno/pinax/pull/31) [`281f2c9`](https://github.com/fortisuno/pinax/commit/281f2c94729ea2b96b8aa1910e107cc86c03d531) Thanks [@fortisuno](https://github.com/fortisuno)! - Corrige desborde en reporte PDF por alumno: pagina notas con muchas tareas/criterios, repite encabezado en continuaciones y numera pie global. Bloque final junto sin corte. Iguala espacios superior/inferior (±1mm, abajo ligeramente mayor) y recupera ~1 fila por página sin solapar el pie.
+
 ## 0.1.16
 
 ### Patch Changes
