@@ -21,6 +21,7 @@ import {
   CriteriaGroupHeader,
   CriteriaGroupLabel,
 } from "@/components/criteria/criteria-group"
+import { ManageAssignmentsDialog } from "@/components/criteria/manage-assignments-dialog"
 import { UpdateCriteriaDialog } from "@/components/criteria/update-criteria-dialog"
 import {
   Alert,
@@ -47,14 +48,12 @@ import {
 } from "@/components/ui/sidebar"
 import {
   criteriaPercentageSchema,
-  criteriaQuantitySchema,
   type CriteriaType,
 } from "@/lib/evaluation"
 import { useEvaluationStore } from "@/stores/evaluation-store"
 
 type EditingTarget =
   | { kind: "other"; index: number }
-  | { kind: "assignmentsQuantity" }
   | { kind: "assignmentsPercentage" }
   | null
 
@@ -63,9 +62,6 @@ type DeletingTarget = { index: number; label: string } | null
 const OTHER_CRITERIA_TITLE = "Editar criterio"
 const OTHER_CRITERIA_DESCRIPTION =
   "Actualiza el nombre y la ponderación de este criterio."
-const ASSIGNMENTS_QUANTITY_TITLE = "Editar cantidad de tareas"
-const ASSIGNMENTS_QUANTITY_DESCRIPTION =
-  "Modifica la cantidad de tareas consideradas en la evaluación."
 const ASSIGNMENTS_PERCENTAGE_TITLE = "Editar ponderación de tareas"
 const ASSIGNMENTS_PERCENTAGE_DESCRIPTION =
   "Modifica la ponderación que representan las tareas en la evaluación."
@@ -74,6 +70,7 @@ const DELETE_OTHER_CRITERIA_DESCRIPTION =
   "¿Estás seguro de que quieres borrar este criterio? Esta acción no se puede deshacer."
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const assignments = useEvaluationStore((state) => state.assignments)
   const assignmentsQuantityCriteria = useEvaluationStore(
     (state) => state.assignmentsQuantityCriteria
   )
@@ -84,9 +81,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const removeOtherCriteria = useEvaluationStore(
     (state) => state.removeOtherCriteria
   )
-  const setAssignmentsQuantityCriteria = useEvaluationStore(
-    (state) => state.setAssignmentsQuantityCriteria
-  )
   const setAssignmentsPercentageCriteria = useEvaluationStore(
     (state) => state.setAssignmentsPercentageCriteria
   )
@@ -96,6 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const [addCriteriaDialogOpen, setAddCriteriaDialogOpen] =
     React.useState(false)
+  const [manageOpen, setManageOpen] = React.useState(false)
   const [editingTarget, setEditingTarget] = React.useState<EditingTarget>(null)
   const [deletingTarget, setDeletingTarget] =
     React.useState<DeletingTarget>(null)
@@ -129,10 +124,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const editingDialog = renderEditingDialog({
     editingTarget,
     otherCriteria,
-    assignmentsQuantityCriteria,
     assignmentsPercentageCriteria,
     updateOtherCriteria,
-    setAssignmentsQuantityCriteria,
     setAssignmentsPercentageCriteria,
     closeEditing,
   })
@@ -159,14 +152,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <CriteriaGroupContent>
             <Criteria
               label={assignmentsQuantityCriteria.label}
-              value={assignmentsQuantityCriteria.value}
+              value={assignments.length}
             >
               <CriteriaMenu>
-                <CriteriaMenuItem
-                  onClick={() =>
-                    setEditingTarget({ kind: "assignmentsQuantity" })
-                  }
-                >
+                <CriteriaMenuItem onClick={() => setManageOpen(true)}>
                   <PencilIcon />
                   <span>Editar</span>
                 </CriteriaMenuItem>
@@ -237,6 +226,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         open={addCriteriaDialogOpen}
         onOpenChange={setAddCriteriaDialogOpen}
       />
+      <ManageAssignmentsDialog open={manageOpen} onOpenChange={setManageOpen} />
       {editingDialog}
       <AlertDialog
         open={deletingTarget !== null}
@@ -266,19 +256,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 function renderEditingDialog({
   editingTarget,
   otherCriteria,
-  assignmentsQuantityCriteria,
   assignmentsPercentageCriteria,
   updateOtherCriteria,
-  setAssignmentsQuantityCriteria,
   setAssignmentsPercentageCriteria,
   closeEditing,
 }: {
   editingTarget: EditingTarget
   otherCriteria: CriteriaType[]
-  assignmentsQuantityCriteria: CriteriaType
   assignmentsPercentageCriteria: CriteriaType
   updateOtherCriteria: (index: number, criteria: CriteriaType) => void
-  setAssignmentsQuantityCriteria: (criteria: CriteriaType) => void
   setAssignmentsPercentageCriteria: (criteria: CriteriaType) => void
   closeEditing: (open: boolean) => void
 }) {
@@ -301,20 +287,6 @@ function renderEditingDialog({
         />
       )
     }
-    case "assignmentsQuantity":
-      return (
-        <UpdateCriteriaDialog
-          open
-          onOpenChange={closeEditing}
-          title={ASSIGNMENTS_QUANTITY_TITLE}
-          description={ASSIGNMENTS_QUANTITY_DESCRIPTION}
-          criteria={assignmentsQuantityCriteria}
-          valueSchema={criteriaQuantitySchema}
-          valueLabel="Cantidad"
-          showLabel={false}
-          onUpdate={setAssignmentsQuantityCriteria}
-        />
-      )
     case "assignmentsPercentage":
       return (
         <UpdateCriteriaDialog

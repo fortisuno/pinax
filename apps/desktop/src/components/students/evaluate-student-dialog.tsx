@@ -21,6 +21,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   computeEvaluation,
   gradeSchema,
   type StudentType,
@@ -66,16 +72,14 @@ function EvaluateStudentForm({
   student: StudentType
   onSubmitted: () => void
 }) {
-  const assignmentsQuantityCriteria = useEvaluationStore(
-    (state) => state.assignmentsQuantityCriteria
-  )
+  const assignments = useEvaluationStore((state) => state.assignments)
   const assignmentsPercentageCriteria = useEvaluationStore(
     (state) => state.assignmentsPercentageCriteria
   )
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
   const saveEvaluation = useStudentsStore((state) => state.saveEvaluation)
 
-  const assignmentsCount = assignmentsQuantityCriteria.value
+  const assignmentsCount = assignments.length
   const assignmentIndices = Array.from(
     { length: assignmentsCount },
     (_, index) => index
@@ -121,8 +125,30 @@ function EvaluateStudentForm({
 
   const canSubmit = useSelector(form.store, (state) => state.canSubmit)
 
+  const formRef = React.useRef<HTMLFormElement | null>(null)
+
+  React.useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const input = formRef.current?.querySelector("input")
+      if (!(input instanceof HTMLInputElement)) return
+      input.focus({ preventScroll: true })
+      try {
+        input.select()
+      } catch {
+        // type="number" sin select(): aplica fallback abajo
+      }
+      try {
+        input.setSelectionRange(0, input.value.length)
+      } catch {
+        // type="number" sin selección programática: solo foco
+      }
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
   return (
     <form
+      ref={formRef}
       className="flex flex-col gap-6"
       onSubmit={(event) => {
         event.preventDefault()
@@ -130,24 +156,49 @@ function EvaluateStudentForm({
         form.handleSubmit()
       }}
     >
-      <div className="no-scrollbar flex max-h-[60vh] flex-col gap-6 overflow-y-auto pr-1">
+      <div className="no-scrollbar flex max-h-[60vh] flex-col gap-6 overflow-y-auto p-1 pb-2">
         <FieldSet>
           <FieldLegend>Tareas ({assignmentsCount})</FieldLegend>
-          <div className="grid grid-cols-1 gap-3">
-            {assignmentIndices.map((index, i) => (
-              <React.Fragment key={index}>
-                <form.Field
-                  name={`assignments[${index}]`}
-                  validators={{ onChange: gradeSchema }}
-                >
-                  {(field) => (
-                    <GradeField field={field} label={`Tarea ${index + 1}`} />
-                  )}
-                </form.Field>
-                {i < assignmentIndices.length - 1 ? <Separator /> : null}
-              </React.Fragment>
-            ))}
-          </div>
+          {assignmentsCount === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Sin tareas definidas. Agrégalas desde Criterios.
+            </p>
+          ) : (
+            <TooltipProvider>
+              <div className="grid grid-cols-1 gap-3">
+                {assignmentIndices.map((index, i) => (
+                  <React.Fragment key={index}>
+                    <form.Field
+                      name={`assignments[${index}]`}
+                      validators={{ onChange: gradeSchema }}
+                    >
+                      {(field) => (
+                        <GradeField
+                          field={field}
+                          label={
+                            <Tooltip>
+                              <TooltipTrigger
+                                type="button"
+                                tabIndex={-1}
+                                className="cursor-help underline decoration-dotted underline-offset-4 outline-none"
+                              >
+                                Tarea {index + 1}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {assignments[index]?.description ??
+                                  `Tarea ${index + 1}`}
+                              </TooltipContent>
+                            </Tooltip>
+                          }
+                        />
+                      )}
+                    </form.Field>
+                    {i < assignmentIndices.length - 1 ? <Separator /> : null}
+                  </React.Fragment>
+                ))}
+              </div>
+            </TooltipProvider>
+          )}
         </FieldSet>
         {otherCriteria.length > 0 ? (
           <FieldSet>
@@ -182,11 +233,20 @@ function EvaluateStudentForm({
   )
 }
 
-function GradeField({ field, label }: { field: AnyFieldApi; label: string }) {
+function GradeField({
+  field,
+  label,
+}: {
+  field: AnyFieldApi
+  label: React.ReactNode
+}) {
   const invalid = field.state.meta.isTouched && !field.state.meta.isValid
   return (
     <Field data-invalid={invalid || undefined} orientation="horizontal">
-      <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+        <FieldError errors={field.state.meta.errors} />
+      </div>
       <Input
         id={field.name}
         name={field.name}
@@ -198,9 +258,8 @@ function GradeField({ field, label }: { field: AnyFieldApi; label: string }) {
         onChange={(event) => field.handleChange(event.target.value)}
         onBlur={field.handleBlur}
         aria-invalid={invalid || undefined}
-        className="w-25"
+        className="w-25 shrink-0"
       />
-      <FieldError errors={field.state.meta.errors} />
     </Field>
   )
 }
