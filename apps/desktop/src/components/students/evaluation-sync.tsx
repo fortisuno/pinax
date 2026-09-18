@@ -71,13 +71,10 @@ function subscribeToEvaluationChanges(
 }
 
 function readEvaluationSnapshot(api: EvaluationStoreApi) {
-  const {
-    assignmentsQuantityCriteria,
-    assignmentsPercentageCriteria,
-    otherCriteria,
-  } = api.getState()
+  const { assignments, assignmentsPercentageCriteria, otherCriteria } =
+    api.getState()
   return {
-    assignmentsQuantity: assignmentsQuantityCriteria.value,
+    assignmentsQuantity: assignments.length,
     assignmentsPercentage: assignmentsPercentageCriteria.value,
     otherCriteria,
   }

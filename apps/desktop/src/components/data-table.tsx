@@ -213,9 +213,7 @@ export function DataTable() {
   const students = useStudentsStore((state) => state.students)
   const removeStudent = useStudentsStore((state) => state.removeStudent)
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
-  const assignmentsQuantityCriteria = useEvaluationStore(
-    (state) => state.assignmentsQuantityCriteria
-  )
+  const assignments = useEvaluationStore((state) => state.assignments)
   const assignmentsPercentageCriteria = useEvaluationStore(
     (state) => state.assignmentsPercentageCriteria
   )
@@ -254,7 +252,7 @@ export function DataTable() {
       try {
         const result = await exportAndSaveStudentReport(student, {
           otherCriteria,
-          assignmentsQuantity: assignmentsQuantityCriteria.value,
+          assignments,
           assignmentsPercentage: assignmentsPercentageCriteria.value,
         })
         if (result.saved) {
@@ -270,7 +268,7 @@ export function DataTable() {
     },
     [
       otherCriteria,
-      assignmentsQuantityCriteria,
+      assignments,
       assignmentsPercentageCriteria,
     ]
   )

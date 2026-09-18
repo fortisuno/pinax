@@ -7,7 +7,7 @@ import {
   type StudentEvaluation,
   type StudentType,
 } from "@/lib/students"
-import type { CriteriaType } from "@/lib/evaluation"
+import type { Assignment, CriteriaType } from "@/lib/evaluation"
 
 const PAGE_FORMAT = "letter" as const
 const PAGE_ORIENTATION = "portrait" as const
@@ -29,15 +29,17 @@ const LEGEND_TITLE = "Abreviaturas"
 const PRIMARY_COLOR: [number, number, number] = [33, 37, 41]
 const ACCENT_COLOR: [number, number, number] = [59, 130, 246]
 const MUTED_COLOR: [number, number, number] = [107, 114, 128]
+const DESCRIPTION_COLOR: [number, number, number] = [156, 163, 175]
 
 const NOTE_LINE_HEIGHT = 6
 const NOTE_HEADING_SIZE = 14
 const NOTE_LABEL_SIZE = 10
 const NOTE_FOOTER_SIZE = 8
+const FOOTER_RESERVE_MM = 7
 
 export interface ExportContext {
   otherCriteria: CriteriaType[]
-  assignmentsQuantity: number
+  assignments: Assignment[]
   assignmentsPercentage: number
 }
 
@@ -120,27 +122,77 @@ function statusLabelFor(evaluation: StudentEvaluation | null): string {
   return evaluation.final >= PASS_THRESHOLD ? PASS_TEXT : FAIL_TEXT
 }
 
+function drawNoteHeader(doc: jsPDF, studentName: string): number {
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(NOTE_HEADING_SIZE)
+  doc.setTextColor(...PRIMARY_COLOR)
+  doc.text(studentName, MARGIN_MM, MARGIN_MM + 4)
+
+  doc.setDrawColor(...ACCENT_COLOR)
+  doc.setLineWidth(0.4)
+  const headingBottom = MARGIN_MM + 6
+  doc.line(MARGIN_MM, headingBottom, pageWidth - MARGIN_MM, headingBottom)
+
+  return headingBottom + 8
+}
+
+function drawNoteFooter(doc: jsPDF, pageNum: number, dateStr: string): void {
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const footerY = pageHeight - MARGIN_MM
+
+  doc.setDrawColor(...MUTED_COLOR)
+  doc.setLineWidth(0.2)
+  doc.line(MARGIN_MM, footerY - 4, pageWidth - MARGIN_MM, footerY - 4)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(NOTE_FOOTER_SIZE)
+  doc.setTextColor(...MUTED_COLOR)
+  doc.text(`${FOOTER_TEXT} · Generado el ${dateStr}`, MARGIN_MM, footerY)
+  doc.text(`Pág. ${pageNum}`, pageWidth - MARGIN_MM, footerY, {
+    align: "right",
+  })
+}
+
+function noteContentBottom(doc: jsPDF): number {
+  return doc.internal.pageSize.getHeight() - MARGIN_MM - FOOTER_RESERVE_MM
+}
+
+function ensureNoteSpace(
+  doc: jsPDF,
+  cursorY: number,
+  neededH: number,
+  studentName: string
+): number {
+  if (cursorY + neededH <= noteContentBottom(doc)) return cursorY
+  doc.addPage()
+  return drawNoteHeader(doc, studentName)
+}
+
+function drawAllFooters(doc: jsPDF, dateStr: string): void {
+  const total = doc.getNumberOfPages()
+  for (let i = 1; i <= total; i += 1) {
+    doc.setPage(i)
+    drawNoteFooter(doc, i, dateStr)
+  }
+}
+
+function currentDateStr(): string {
+  return new Date().toLocaleDateString("es-MX")
+}
+
 function drawNotePage(
   doc: jsPDF,
   student: StudentType,
   ctx: ExportContext
 ): void {
   const pageWidth = doc.internal.pageSize.getWidth()
-  const pageHeight = doc.internal.pageSize.getHeight()
 
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(NOTE_HEADING_SIZE)
-  doc.setTextColor(...PRIMARY_COLOR)
-  doc.text(student.name, MARGIN_MM, MARGIN_MM + 4)
-
-  doc.setDrawColor(...ACCENT_COLOR)
-  doc.setLineWidth(0.4)
-  const headingBottom = MARGIN_MM + 8
-  doc.line(MARGIN_MM, headingBottom, pageWidth - MARGIN_MM, headingBottom)
-
-  let cursorY = headingBottom + 8
+  let cursorY = drawNoteHeader(doc, student.name)
 
   const labelValueRow = (label: string, value: string, emphasize = false) => {
+    cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.name)
     doc.setFont("helvetica", emphasize ? "bold" : "normal")
     doc.setFontSize(NOTE_LABEL_SIZE)
     doc.setTextColor(...PRIMARY_COLOR)
@@ -154,14 +206,73 @@ function drawNotePage(
     cursorY += NOTE_LINE_HEIGHT
   }
 
+  const labelValueRowAtomic = (rows: { label: string; value: string }[]) => {
+    cursorY = ensureNoteSpace(
+      doc,
+      cursorY,
+      rows.length * NOTE_LINE_HEIGHT,
+      student.name
+    )
+    for (const row of rows) {
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(NOTE_LABEL_SIZE)
+      doc.setTextColor(...PRIMARY_COLOR)
+      doc.text(row.label, MARGIN_MM, cursorY)
+      doc.text(row.value, pageWidth - MARGIN_MM, cursorY, { align: "right" })
+      cursorY += NOTE_LINE_HEIGHT
+    }
+  }
+
   const evaluation = student.evaluation
 
-  for (let i = 0; i < ctx.assignmentsQuantity; i += 1) {
+  for (let i = 0; i < ctx.assignments.length; i += 1) {
+    cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.name)
     const value =
       evaluation && i < student.assignmentGrades.length
         ? formatScoreOrDash(student.assignmentGrades[i])
         : DASH
-    labelValueRow(`Tarea ${i + 1}`, value)
+    const label = `Tarea ${i + 1}`
+    const description = ctx.assignments[i]?.description.trim() ?? ""
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(NOTE_LABEL_SIZE)
+    doc.setTextColor(...PRIMARY_COLOR)
+    doc.text(label, MARGIN_MM, cursorY)
+
+    if (description) {
+      const labelWidth = doc.getTextWidth(`${label} `)
+      const maxDescWidth =
+        pageWidth - MARGIN_MM * 2 - labelWidth - 20
+      if (maxDescWidth > 10) {
+        doc.setFont("helvetica", "italic")
+        doc.setTextColor(...DESCRIPTION_COLOR)
+        const lines = doc.splitTextToSize(description, maxDescWidth)
+        let firstLine: string = Array.isArray(lines)
+          ? (lines[0] ?? "")
+          : String(lines)
+        if (
+          Array.isArray(lines) &&
+          (lines.length > 1 || doc.getTextWidth(firstLine) > maxDescWidth)
+        ) {
+          const ellipsis = "…"
+          while (
+            firstLine.length > 0 &&
+            doc.getTextWidth(firstLine + ellipsis) > maxDescWidth
+          ) {
+            firstLine = firstLine.slice(0, -1)
+          }
+          firstLine = `${firstLine.trimEnd()}${ellipsis}`
+        }
+        doc.text(firstLine, MARGIN_MM + labelWidth, cursorY)
+      }
+    }
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(NOTE_LABEL_SIZE)
+    doc.setTextColor(...PRIMARY_COLOR)
+    doc.text(value, pageWidth - MARGIN_MM, cursorY, { align: "right" })
+
+    cursorY += NOTE_LINE_HEIGHT
   }
 
   cursorY += 2
@@ -183,7 +294,10 @@ function drawNotePage(
         formatScoreOrDash(evaluation.weightedCriteria[criterion.label])
       )
     }
-    labelValueRow(FINAL_GRADE_LABEL, formatScoreOrDash(evaluation.final), true)
+    labelValueRowAtomic([
+      { label: FINAL_GRADE_LABEL, value: formatScoreOrDash(evaluation.final) },
+      { label: STATUS_LABEL, value: statusLabelFor(evaluation) },
+    ])
   } else {
     labelValueRow(TASKS_DELIVERED_LABEL, DASH)
     labelValueRow(TASKS_LABEL, DASH)
@@ -198,29 +312,18 @@ function drawNotePage(
         DASH
       )
     }
-    labelValueRow(FINAL_GRADE_LABEL, DASH, true)
+    labelValueRowAtomic([
+      { label: FINAL_GRADE_LABEL, value: DASH },
+      { label: STATUS_LABEL, value: statusLabelFor(evaluation) },
+    ])
   }
-
-  labelValueRow(STATUS_LABEL, statusLabelFor(evaluation), true)
-
-  doc.setDrawColor(...MUTED_COLOR)
-  doc.setLineWidth(0.2)
-  const footerY = pageHeight - MARGIN_MM
-  doc.line(MARGIN_MM, footerY - 4, pageWidth - MARGIN_MM, footerY - 4)
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(NOTE_FOOTER_SIZE)
-  doc.setTextColor(...MUTED_COLOR)
-  doc.text(
-    `${FOOTER_TEXT} · Generado el ${new Date().toLocaleDateString("es-MX")}`,
-    MARGIN_MM,
-    footerY
-  )
 }
 
 function drawSummaryPage(
   doc: jsPDF,
   students: StudentType[],
-  ctx: ExportContext
+  ctx: ExportContext,
+  dateStr: string
 ): void {
   const { head, body, legend } = buildSummaryTableData(students, ctx)
 
@@ -233,7 +336,7 @@ function drawSummaryPage(
   doc.setFontSize(9)
   doc.setTextColor(...MUTED_COLOR)
   doc.text(
-    `Generado el ${new Date().toLocaleDateString("es-MX")} · ${students.length} alumno(s)`,
+    `Generado el ${dateStr} · ${students.length} alumno(s)`,
     MARGIN_MM,
     MARGIN_MM + 10
   )
@@ -265,24 +368,29 @@ function drawSummaryPage(
     columnStyles: {
       0: { halign: "left", fontStyle: "bold" },
     },
-    margin: { left: MARGIN_MM, right: MARGIN_MM },
+    margin: {
+      left: MARGIN_MM,
+      right: MARGIN_MM,
+      bottom: MARGIN_MM + FOOTER_RESERVE_MM,
+    },
   })
 
   const finalY =
     (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable
       ?.finalY ?? MARGIN_MM + 30
 
-  const legendStartY = finalY + 10
   const pageHeight = doc.internal.pageSize.getHeight()
-  if (legendStartY > pageHeight - MARGIN_MM - legend.length * 5 - 10) {
+  const legendBottom = (): number =>
+    pageHeight - MARGIN_MM - FOOTER_RESERVE_MM
+
+  let legendY = finalY + 10
+  const ensureLegendSpace = (neededH: number): void => {
+    if (legendY + neededH <= legendBottom()) return
     doc.addPage()
+    legendY = MARGIN_MM
   }
 
-  let legendY =
-    legendStartY > pageHeight - MARGIN_MM - legend.length * 5 - 10
-      ? MARGIN_MM
-      : legendStartY
-
+  ensureLegendSpace(5 + 4.5)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(10)
   doc.setTextColor(...PRIMARY_COLOR)
@@ -293,6 +401,7 @@ function drawSummaryPage(
   doc.setFontSize(9)
   doc.setTextColor(...MUTED_COLOR)
   for (const entry of legend) {
+    ensureLegendSpace(4.5)
     doc.text(`${entry.abbreviation} — ${entry.meaning}`, MARGIN_MM, legendY)
     legendY += 4.5
   }
@@ -307,7 +416,9 @@ export function exportStudentReport(
     format: PAGE_FORMAT,
     orientation: PAGE_ORIENTATION,
   })
+  const dateStr = currentDateStr()
   drawNotePage(doc, student, ctx)
+  drawAllFooters(doc, dateStr)
   return new Blob([doc.output("arraybuffer")], { type: "application/pdf" })
 }
 
@@ -320,11 +431,13 @@ export function exportGroupReport(
     format: PAGE_FORMAT,
     orientation: PAGE_ORIENTATION,
   })
-  drawSummaryPage(doc, students, ctx)
+  const dateStr = currentDateStr()
+  drawSummaryPage(doc, students, ctx, dateStr)
   for (const student of students) {
     doc.addPage()
     drawNotePage(doc, student, ctx)
   }
+  drawAllFooters(doc, dateStr)
   return new Blob([doc.output("arraybuffer")], { type: "application/pdf" })
 }
 

@@ -5,6 +5,16 @@ export interface CriteriaType {
   value: number
 }
 
+export interface Assignment {
+  description: string
+}
+
+export const assignmentDescriptionSchema = z
+  .string()
+  .trim()
+  .min(1, "La descripción es obligatoria")
+  .max(60, "Máximo 60 caracteres")
+
 export const criteriaLabelSchema = z
   .string()
   .trim()
@@ -45,9 +55,11 @@ export type UpdateAssignmentsCriteriaValues = z.infer<
 >
 export type OtherCriteriaValues = z.infer<typeof otherCriteriaSchema>
 
+export const DEFAULT_ASSIGNMENTS: Assignment[] = []
+
 export const DEFAULT_ASSIGNMENTS_QUANTITY_CRITERIA: CriteriaType = {
   label: "Cantidad de tareas",
-  value: 3,
+  value: 0,
 }
 
 export const DEFAULT_ASSIGNMENTS_PERCENTAGE_CRITERIA: CriteriaType = {
