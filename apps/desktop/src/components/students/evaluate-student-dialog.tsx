@@ -49,7 +49,7 @@ export function EvaluateStudentDialog({
     <Dialog open={student !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Calificar a {student?.name}</DialogTitle>
+          <DialogTitle>Calificar a {student?.displayName}</DialogTitle>
           <DialogDescription>
             Asigna la calificación obtenida en cada tarea y en cada criterio,
             antes de ponderar.

@@ -43,6 +43,8 @@ const ACCENT_COLOR: [number, number, number] = [59, 130, 246]
 const MUTED_COLOR: [number, number, number] = [107, 114, 128]
 const DESCRIPTION_COLOR: [number, number, number] = [156, 163, 175]
 
+const SUMMARY_HIGHLIGHT_FILL: [number, number, number] = [243, 244, 246]
+
 const NOTE_LINE_HEIGHT = 6
 const NOTE_HEADING_SIZE = 14
 const NOTE_LABEL_SIZE = 10
@@ -70,44 +72,35 @@ export function buildSummaryTableData(
   ctx: ExportContext
 ) {
   const unitCriteria = ctx.unitCriteria ?? []
-  const head: string[] = ["Nombre", "TE", "T", "TP"]
-  for (const criterion of ctx.otherCriteria) {
-    head.push(getInitials(criterion.label))
-    head.push(`${getInitials(criterion.label)} P`)
-  }
-  head.push("CB", "CBP")
-  unitCriteria.forEach((_, index) => {
-    const abbr = unitAbbreviation(index)
-    head.push(abbr, `${abbr}P`, `${abbr}F`)
+  const head: string[] = ["Nombre", "CB", "CBP"]
+  unitCriteria.forEach(() => {
+    head.push("E", "EP", "CF")
   })
   head.push("Estado")
 
+  const groupHead: ({ content: string; colSpan?: number } | string)[] | null =
+    unitCriteria.length > 0
+      ? [
+          "",
+          "",
+          "",
+          ...unitCriteria.map((unit) => ({
+            content: getInitials(unit.label),
+            colSpan: 3,
+          })),
+          "",
+        ]
+      : null
+
   const body = students.map((student) => {
     const evaluation = student.evaluation
-    const row: string[] = [student.name]
-    if (evaluation) {
-      row.push(
-        String(evaluation.tasksDelivered),
-        formatScore(evaluation.tasksAverage),
-        formatScore(evaluation.tasks)
-      )
-    } else {
-      row.push(DASH, DASH, DASH)
-    }
-    for (const criterion of ctx.otherCriteria) {
-      if (evaluation) {
-        row.push(
-          formatScore(evaluation.criteria[criterion.label] ?? 0),
-          formatScore(evaluation.weightedCriteria[criterion.label] ?? 0)
-        )
-      } else {
-        row.push(DASH, DASH)
-      }
-    }
+    const row: string[] = [student.displayName]
     if (evaluation) {
       const base = evaluation.base ?? evaluation.final
-      const baseWeighted = evaluation.baseWeighted ?? 0
-      row.push(formatScore(base), formatScore(baseWeighted))
+      row.push(
+        formatScoreOrDash(base),
+        formatScoreOrDash(evaluation.baseWeighted)
+      )
     } else {
       row.push(DASH, DASH)
     }
@@ -132,39 +125,28 @@ export function buildSummaryTableData(
   })
 
   const legend: { abbreviation: string; meaning: string }[] = [
-    { abbreviation: "TE", meaning: TASKS_DELIVERED_LABEL },
-    { abbreviation: "T", meaning: TASKS_LABEL },
-    { abbreviation: "TP", meaning: TASKS_WEIGHTED_LABEL },
     { abbreviation: "CB", meaning: BASE_GRADE_LABEL },
     {
       abbreviation: "CBP",
       meaning: `${BASE_WEIGHTED_LABEL} (${UNIT_BASE_WEIGHT}%)`,
     },
   ]
-  for (const criterion of ctx.otherCriteria) {
+  for (const unit of unitCriteria) {
     legend.push({
-      abbreviation: getInitials(criterion.label),
-      meaning: criterion.label,
-    })
-    legend.push({
-      abbreviation: `${getInitials(criterion.label)} P`,
-      meaning: `${criterion.label} Ponderado`,
+      abbreviation: getInitials(unit.label),
+      meaning: unit.label,
     })
   }
-  unitCriteria.forEach((unit, index) => {
-    const abbr = unitAbbreviation(index)
-    legend.push({ abbreviation: abbr, meaning: `${unit.label} ${EXAM_LABEL}` })
-    legend.push({
-      abbreviation: `${abbr}P`,
-      meaning: `${unit.label} ${EXAM_WEIGHTED_LABEL} (${UNIT_EXAM_WEIGHT}%)`,
-    })
-    legend.push({
-      abbreviation: `${abbr}F`,
-      meaning: `${unit.label} ${UNIT_FINAL_LABEL}`,
-    })
-  })
+  legend.push(
+    { abbreviation: "E", meaning: EXAM_LABEL },
+    {
+      abbreviation: "EP",
+      meaning: `${EXAM_WEIGHTED_LABEL} (${UNIT_EXAM_WEIGHT}%)`,
+    },
+    { abbreviation: "CF", meaning: UNIT_FINAL_LABEL }
+  )
 
-  return { head, body, legend }
+  return { head, body, legend, groupHead }
 }
 
 function formatScoreOrDash(value: number | undefined): string {
@@ -247,7 +229,7 @@ function drawNotePage(
   const pageWidth = doc.internal.pageSize.getWidth()
   const unitCriteria = ctx.unitCriteria ?? []
 
-  let cursorY = drawNoteHeader(doc, student.name)
+  let cursorY = drawNoteHeader(doc, student.displayName)
 
   const labelValueRow = (
     label: string,
@@ -256,7 +238,7 @@ function drawNotePage(
   ) => {
     const emphasize = options?.emphasize ?? false
     const indentX = options?.indentX ?? 0
-    cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.name)
+    cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.displayName)
     doc.setFont("helvetica", emphasize ? "bold" : "normal")
     doc.setFontSize(NOTE_LABEL_SIZE)
     doc.setTextColor(...PRIMARY_COLOR)
@@ -271,7 +253,7 @@ function drawNotePage(
   }
 
   const drawSeparatorLine = () => {
-    cursorY = ensureNoteSpace(doc, cursorY, 4, student.name)
+    cursorY = ensureNoteSpace(doc, cursorY, 4, student.displayName)
     cursorY += 2
     doc.setDrawColor(...MUTED_COLOR)
     doc.setLineWidth(0.2)
@@ -280,7 +262,7 @@ function drawNotePage(
   }
 
   const drawUnitDivider = () => {
-    cursorY = ensureNoteSpace(doc, cursorY, 4, student.name)
+    cursorY = ensureNoteSpace(doc, cursorY, 4, student.displayName)
     cursorY += 1
     doc.setDrawColor(...DESCRIPTION_COLOR)
     doc.setLineWidth(0.1)
@@ -298,7 +280,7 @@ function drawNotePage(
       doc,
       cursorY,
       rows.length * NOTE_LINE_HEIGHT,
-      student.name
+      student.displayName
     )
     for (const row of rows) {
       doc.setFont("helvetica", "bold")
@@ -313,7 +295,7 @@ function drawNotePage(
   const evaluation = student.evaluation
 
   for (let i = 0; i < ctx.assignments.length; i += 1) {
-    cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.name)
+    cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.displayName)
     const value =
       evaluation && i < student.assignmentGrades.length
         ? formatScoreOrDash(student.assignmentGrades[i])
@@ -466,7 +448,10 @@ function drawSummaryPage(
   ctx: ExportContext,
   dateStr: string
 ): void {
-  const { head, body, legend } = buildSummaryTableData(students, ctx)
+  const { head, body, legend, groupHead } = buildSummaryTableData(
+    students,
+    ctx
+  )
 
   doc.setFont("helvetica", "bold")
   doc.setFontSize(14)
@@ -482,15 +467,29 @@ function drawSummaryPage(
     MARGIN_MM + 10
   )
 
+  const highlightColumnStyles: Record<
+    number,
+    { halign: "center"; fillColor: [number, number, number] }
+  > = {
+    2: { halign: "center", fillColor: SUMMARY_HIGHLIGHT_FILL },
+  }
+  ;(ctx.unitCriteria ?? []).forEach((_, index) => {
+    highlightColumnStyles[5 + index * 3] = {
+      halign: "center",
+      fillColor: SUMMARY_HIGHLIGHT_FILL,
+    }
+  })
+  const compactSummary = head.length > 12
+
   autoTable(doc, {
     startY: MARGIN_MM + 14,
-    head: [head],
+    head: groupHead ? [groupHead, head] : [head],
     body,
     theme: "grid",
     styles: {
       font: "helvetica",
-      fontSize: head.length > 12 ? 7 : 8,
-      cellPadding: 2,
+      fontSize: compactSummary ? 6.5 : 8,
+      cellPadding: compactSummary ? 1.5 : 2,
       textColor: PRIMARY_COLOR,
       lineColor: [220, 220, 220],
       lineWidth: 0.1,
@@ -508,6 +507,7 @@ function drawSummaryPage(
     },
     columnStyles: {
       0: { halign: "left", fontStyle: "bold" },
+      ...highlightColumnStyles,
     },
     margin: {
       left: MARGIN_MM,
@@ -606,7 +606,7 @@ export function buildStudentReportFilename(
   student: StudentType,
   date: Date = new Date()
 ): string {
-  return `${sanitizeFilename(student.name)}-${formatDateForFilename(date)}.pdf`
+  return `${sanitizeFilename(student.displayName)}-${formatDateForFilename(date)}.pdf`
 }
 
 export async function savePdf(

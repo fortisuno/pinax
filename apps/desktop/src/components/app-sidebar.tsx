@@ -1,10 +1,8 @@
 import * as React from "react"
 import {
-  AlertCircleIcon,
-  AlertTriangleIcon,
-  CheckCircle2Icon,
   PencilIcon,
   PlusIcon,
+  RotateCcwIcon,
   TrashIcon,
 } from "lucide-react"
 
@@ -25,11 +23,6 @@ import {
 import { ManageAssignmentsDialog } from "@/components/criteria/manage-assignments-dialog"
 import { UpdateCriteriaDialog } from "@/components/criteria/update-criteria-dialog"
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -42,11 +35,11 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { Separator } from "@/components/ui/separator"
 import {
   criteriaPercentageSchema,
   type CriteriaType,
@@ -73,6 +66,9 @@ const UNIT_CRITERIA_DESCRIPTION =
 const DELETE_OTHER_CRITERIA_TITLE = "Borrar criterio"
 const DELETE_OTHER_CRITERIA_DESCRIPTION =
   "¿Estás seguro de que quieres borrar este criterio? Esta acción no se puede deshacer."
+const RESET_CRITERIA_TITLE = "Restablecer criterios"
+const RESET_CRITERIA_DESCRIPTION =
+  "Se restablecerá la ponderación de tareas a su valor por defecto y se borrarán los Otros criterios. Esta acción no se puede deshacer."
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const assignments = useEvaluationStore((state) => state.assignments)
@@ -86,6 +82,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const unitCriteria = useEvaluationStore((state) => state.unitCriteria)
   const removeOtherCriteria = useEvaluationStore(
     (state) => state.removeOtherCriteria
+  )
+  const resetEvaluationCriteria = useEvaluationStore(
+    (state) => state.resetEvaluationCriteria
   )
   const setAssignmentsPercentageCriteria = useEvaluationStore(
     (state) => state.setAssignmentsPercentageCriteria
@@ -103,6 +102,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [editingTarget, setEditingTarget] = React.useState<EditingTarget>(null)
   const [deletingTarget, setDeletingTarget] =
     React.useState<DeletingTarget>(null)
+  const [resetCriteriaDialogOpen, setResetCriteriaDialogOpen] =
+    React.useState(false)
 
   const closeEditing = React.useCallback((open: boolean) => {
     if (!open) {
@@ -122,13 +123,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     setDeletingTarget(null)
   }, [deletingTarget, removeOtherCriteria])
 
-  const totalPercentage = React.useMemo(() => {
-    const otherCriteriaTotal = otherCriteria.reduce(
-      (sum, criteria) => sum + criteria.value,
-      0
-    )
-    return assignmentsPercentageCriteria.value + otherCriteriaTotal
-  }, [assignmentsPercentageCriteria.value, otherCriteria])
+  const confirmResetCriteria = React.useCallback(() => {
+    resetEvaluationCriteria()
+    setResetCriteriaDialogOpen(false)
+  }, [resetEvaluationCriteria])
 
   const editingDialog = renderEditingDialog({
     editingTarget,
@@ -156,6 +154,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        <CriteriaGroup>
+          <CriteriaGroupHeader>
+            <CriteriaGroupLabel>Unidades de aprendizaje</CriteriaGroupLabel>
+          </CriteriaGroupHeader>
+          <CriteriaGroupContent>
+            {unitCriteria.map((criteria, index) => (
+              <UnitCriteriaItem key={"uc_" + index} label={criteria.label}>
+                <CriteriaMenu>
+                  <CriteriaMenuItem
+                    onClick={() => setEditingTarget({ kind: "unit", index })}
+                  >
+                    <PencilIcon />
+                    <span>Editar</span>
+                  </CriteriaMenuItem>
+                </CriteriaMenu>
+              </UnitCriteriaItem>
+            ))}
+          </CriteriaGroupContent>
+        </CriteriaGroup>
         <CriteriaGroup>
           <CriteriaGroupHeader>
             <CriteriaGroupLabel>Tareas</CriteriaGroupLabel>
@@ -193,12 +210,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <CriteriaGroup>
           <CriteriaGroupHeader>
             <CriteriaGroupLabel>Otros Criterios</CriteriaGroupLabel>
-            <CriteriaGroupAction
-              aria-label="Agregar otro criterio"
-              onClick={() => setAddCriteriaDialogOpen(true)}
-            >
-              <PlusIcon />
-            </CriteriaGroupAction>
+            <div className="flex items-center gap-1">
+              <CriteriaGroupAction
+                aria-label="Restablecer criterios"
+                onClick={() => setResetCriteriaDialogOpen(true)}
+              >
+                <RotateCcwIcon />
+              </CriteriaGroupAction>
+              <Separator orientation="vertical" className="h-4 w-px self-center" />
+              <CriteriaGroupAction
+                aria-label="Agregar otro criterio"
+                onClick={() => setAddCriteriaDialogOpen(true)}
+              >
+                <PlusIcon />
+              </CriteriaGroupAction>
+            </div>
           </CriteriaGroupHeader>
           <CriteriaGroupContent>
             {otherCriteria.map((criteria, index) => (
@@ -229,29 +255,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ))}
           </CriteriaGroupContent>
         </CriteriaGroup>
-        <CriteriaGroup>
-          <CriteriaGroupHeader>
-            <CriteriaGroupLabel>Unidades de aprendizaje</CriteriaGroupLabel>
-          </CriteriaGroupHeader>
-          <CriteriaGroupContent>
-            {unitCriteria.map((criteria, index) => (
-              <UnitCriteriaItem key={"uc_" + index} label={criteria.label}>
-                <CriteriaMenu>
-                  <CriteriaMenuItem
-                    onClick={() => setEditingTarget({ kind: "unit", index })}
-                  >
-                    <PencilIcon />
-                    <span>Editar</span>
-                  </CriteriaMenuItem>
-                </CriteriaMenu>
-              </UnitCriteriaItem>
-            ))}
-          </CriteriaGroupContent>
-        </CriteriaGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <PonderacionAlert totalPercentage={totalPercentage} />
-      </SidebarFooter>
       <AddOtherCriteriaDialog
         open={addCriteriaDialogOpen}
         onOpenChange={setAddCriteriaDialogOpen}
@@ -275,6 +279,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={confirmDelete}>
               Borrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={resetCriteriaDialogOpen}
+        onOpenChange={setResetCriteriaDialogOpen}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{RESET_CRITERIA_TITLE}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {RESET_CRITERIA_DESCRIPTION}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={confirmResetCriteria}
+            >
+              Restablecer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -355,62 +381,4 @@ function renderEditingDialog({
     default:
       return null
   }
-}
-
-type PonderacionStatus = "ok" | "warning" | "destructive"
-
-const PONDERACION_STATUS_CLASSNAMES: Record<PonderacionStatus, string> = {
-  ok: "border-emerald-200 bg-emerald-50 text-emerald-900 *:data-[slot=alert-description]:text-emerald-900/80 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100 dark:*:data-[slot=alert-description]:text-emerald-100/80",
-  warning:
-    "border-amber-200 bg-amber-50 text-amber-900 *:data-[slot=alert-description]:text-amber-900/80 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100 dark:*:data-[slot=alert-description]:text-amber-100/80",
-  destructive: "",
-}
-
-function getPonderacionStatus(total: number): PonderacionStatus {
-  if (total > 100) return "destructive"
-  if (total < 100) return "warning"
-  return "ok"
-}
-
-function PonderacionAlert({ totalPercentage }: { totalPercentage: number }) {
-  const status = getPonderacionStatus(totalPercentage)
-  const difference = Math.abs(100 - totalPercentage)
-  const totalLabel = `${totalPercentage}%`
-
-  if (status === "ok") {
-    return (
-      <Alert className={PONDERACION_STATUS_CLASSNAMES.ok}>
-        <CheckCircle2Icon />
-        <AlertTitle>Ponderación completa ({totalLabel})</AlertTitle>
-        <AlertDescription>
-          La suma de las ponderaciones alcanza exactamente el 100%. La
-          configuración está lista para usarse.
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  if (status === "warning") {
-    return (
-      <Alert className={PONDERACION_STATUS_CLASSNAMES.warning}>
-        <AlertTriangleIcon />
-        <AlertTitle>Ponderación incompleta ({totalLabel})</AlertTitle>
-        <AlertDescription>
-          La suma actual es de {totalLabel}. Aún falta asignar {difference}%
-          para alcanzar el 100% requerido.
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  return (
-    <Alert variant="destructive">
-      <AlertCircleIcon />
-      <AlertTitle>Ponderación excedida ({totalLabel})</AlertTitle>
-      <AlertDescription>
-        La suma actual es de {totalLabel}. Excede el 100% en {difference}%.
-        Ajusta los valores para que la ponderación total no supere el 100%.
-      </AlertDescription>
-    </Alert>
-  )
 }

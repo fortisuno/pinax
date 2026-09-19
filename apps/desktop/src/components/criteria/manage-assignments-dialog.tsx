@@ -1,7 +1,9 @@
 import * as React from "react"
-import { PlusIcon, TrashIcon } from "lucide-react"
+import { MoreHorizontalIcon, PlusIcon, TrashIcon } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import {
   Dialog,
   DialogClose,
@@ -13,6 +15,12 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { assignmentDescriptionSchema } from "@/lib/evaluation"
 import { useEvaluationStore } from "@/stores/evaluation-store"
 
@@ -56,6 +64,9 @@ function ManageAssignmentsForm({ onSubmitted }: { onSubmitted: () => void }) {
   )
   const removeAssignment = useEvaluationStore(
     (state) => state.removeAssignment
+  )
+  const removeAllAssignments = useEvaluationStore(
+    (state) => state.removeAllAssignments
   )
 
   const [draft, setDraft] = React.useState<string[]>(() =>
@@ -125,6 +136,11 @@ function ManageAssignmentsForm({ onSubmitted }: { onSubmitted: () => void }) {
     inputRefs.current.splice(index, 1)
     setDraft((prev) => prev.filter((_, i) => i !== index))
   }, [])
+
+  const handleClearAll = React.useCallback(() => {
+    removeAllAssignments()
+    toast.success("Tareas eliminadas")
+  }, [removeAllAssignments])
 
   const handleChange = React.useCallback((index: number, value: string) => {
     setDraft((prev) => prev.map((item, i) => (i === index ? value : item)))
@@ -219,10 +235,28 @@ function ManageAssignmentsForm({ onSubmitted }: { onSubmitted: () => void }) {
         </FieldGroup>
       </div>
       <DialogFooter className="sm:justify-between">
-        <Button type="button" variant="outline" onClick={handleAdd}>
-          <PlusIcon data-icon="inline-start" />
-          Agregar tarea
-        </Button>
+        <ButtonGroup>
+          <Button type="button" variant="outline" onClick={handleAdd}>
+            <PlusIcon data-icon="inline-start" />
+            Agregar tarea
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="outline" />}>
+              <MoreHorizontalIcon />
+              <span className="sr-only">Abrir menú</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-auto min-w-fit">
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={handleClearAll}
+                disabled={assignments.length === 0}
+              >
+                <TrashIcon />
+                <span>Limpiar tareas</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ButtonGroup>
         <div className="flex flex-col-reverse gap-2 sm:flex-row">
           <DialogClose render={<Button type="button" variant="outline" />}>
             Cancelar

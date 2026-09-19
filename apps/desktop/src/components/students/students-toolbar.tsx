@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import {
@@ -29,8 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
-import { formatScore } from "@/lib/students"
+import { PonderacionAlert } from "@/components/criteria/ponderacion-alert"
 import { exportAndSaveGroupReport } from "@/lib/pdf-export"
 import { useEvaluationStore } from "@/stores/evaluation-store"
 import { useStudentsStore } from "@/stores/students-store"
@@ -43,41 +41,6 @@ const DELETE_GRADES_DESCRIPTION =
 const DELETE_TABLE_TITLE = "Limpiar tabla"
 const DELETE_TABLE_DESCRIPTION =
   "¿Estás seguro de que quieres limpiar la tabla? Se eliminarán todos los alumnos registrados. Esta acción no se puede deshacer."
-
-function GroupAverageBadge() {
-  const students = useStudentsStore((state) => state.students)
-
-  const average = React.useMemo(() => {
-    if (students.length === 0) return null
-    if (!students.every((student) => student.status === "evaluated")) return null
-    const sum = students.reduce(
-      (acc, student) => acc + (student.evaluation?.final ?? 0),
-      0
-    )
-    return sum / students.length
-  }, [students])
-
-  if (average === null) {
-    return (
-      <Badge variant="secondary" className="h-10 px-4 text-sm">
-        Promedio grupal:<span className="ml-2">—</span>
-      </Badge>
-    )
-  }
-
-  const colorClass =
-    average < 6
-      ? "bg-destructive/10 text-destructive dark:bg-destructive/20"
-      : average < 8
-        ? "bg-yellow-500/10 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"
-        : "bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400"
-
-  return (
-    <Badge className={cn("h-10 px-4 text-sm", colorClass)}>
-      Promedio grupal:<span className="ml-2">{formatScore(average)}</span>
-    </Badge>
-  )
-}
 
 export function StudentsToolbar() {
   const clearEvaluations = useStudentsStore(
@@ -102,6 +65,14 @@ export function StudentsToolbar() {
       students.length > 0 && students.every((s) => s.status === "evaluated"),
     [students]
   )
+
+  const totalPercentage = React.useMemo(() => {
+    const otherCriteriaTotal = otherCriteria.reduce(
+      (sum, criteria) => sum + criteria.value,
+      0
+    )
+    return assignmentsPercentageCriteria.value + otherCriteriaTotal
+  }, [assignmentsPercentageCriteria.value, otherCriteria])
 
   const confirmDelete = React.useCallback(() => {
     if (deleteAction === "grades") {
@@ -152,7 +123,7 @@ export function StudentsToolbar() {
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <GroupAverageBadge />
+      <PonderacionAlert totalPercentage={totalPercentage} />
       <ButtonGroup>
         <Button variant="outline" size="lg" onClick={() => setAddStudentDialogOpen(true)}>
           <PlusIcon data-icon="inline-start" />

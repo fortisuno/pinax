@@ -6,6 +6,7 @@ import {
   unitGradeKey,
   type CriteriaType,
 } from "@/lib/evaluation"
+import { toTitleCase } from "@/lib/utils"
 
 export type StudentStatus = "not-evaluated" | "evaluated"
 
@@ -29,7 +30,10 @@ export interface StudentEvaluation {
 
 export interface StudentType {
   id: string
-  name: string
+  paternalSurname: string
+  maternalSurname: string
+  firstNames: string
+  displayName: string
   status: StudentStatus
   assignmentGrades: number[]
   criteriaGrades: Record<string, number>
@@ -37,11 +41,31 @@ export interface StudentType {
   evaluation: StudentEvaluation | null
 }
 
-export const studentNameSchema = z
+export const paternalSurnameSchema = z
   .string()
   .trim()
-  .min(1, "El nombre es obligatorio")
-  .max(60, "Máximo 60 caracteres")
+  .min(1, "El apellido paterno es obligatorio")
+  .max(30, "Máximo 30 caracteres")
+
+export const maternalSurnameSchema = z
+  .string()
+  .trim()
+  .min(1, "El apellido materno es obligatorio")
+  .max(30, "Máximo 30 caracteres")
+
+export const firstNamesSchema = z
+  .string()
+  .trim()
+  .min(1, "Los nombres son obligatorios")
+  .max(40, "Máximo 40 caracteres")
+
+export const studentNamePartsSchema = z.object({
+  paternalSurname: paternalSurnameSchema,
+  maternalSurname: maternalSurnameSchema,
+  firstNames: firstNamesSchema,
+})
+
+export type StudentNameInput = z.infer<typeof studentNamePartsSchema>
 
 const gradeInputSchema = z
   .string()
@@ -54,10 +78,37 @@ export const gradeSchema = gradeInputSchema.pipe(
     .max(10, "Máximo 10")
 )
 
-export function createStudent(name: string): StudentType {
+export function buildDisplayName({
+  paternalSurname,
+  maternalSurname,
+  firstNames,
+}: StudentNameInput): string {
+  return [paternalSurname, maternalSurname, firstNames]
+    .map((part) =>
+      part
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .join(" ")
+    )
+    .filter((part) => part.length > 0)
+    .join(" ")
+}
+
+export function createStudent(input: StudentNameInput): StudentType {
+  const paternalSurname = toTitleCase(input.paternalSurname.trim())
+  const maternalSurname = toTitleCase(input.maternalSurname.trim())
+  const firstNames = toTitleCase(input.firstNames.trim())
   return {
     id: crypto.randomUUID(),
-    name,
+    paternalSurname,
+    maternalSurname,
+    firstNames,
+    displayName: buildDisplayName({
+      paternalSurname,
+      maternalSurname,
+      firstNames,
+    }),
     status: "not-evaluated",
     assignmentGrades: [],
     criteriaGrades: {},
@@ -143,6 +194,14 @@ export function computeEvaluation({
     units[key] = { exam, examWeighted, final }
   })
 
+  // Calificación final = promedio aritmético de los finales por unidad.
+  // Fallback defensivo a `base` si no hay unidades.
+  const unitFinals = Object.values(units).map((result) => result.final)
+  const final =
+    unitFinals.length > 0
+      ? unitFinals.reduce((sum, value) => sum + value, 0) / unitFinals.length
+      : base
+
   return {
     tasksDelivered: countTasksDelivered(assignmentGrades),
     tasksAverage,
@@ -152,7 +211,6 @@ export function computeEvaluation({
     base,
     baseWeighted,
     units,
-    // final legacy = base para compatibilidad (StatusIcon, promedio, statusLabel).
-    final: base,
+    final,
   }
 }

@@ -3,18 +3,21 @@ import { createStore, useStore } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 
 import {
+  buildDisplayName,
   createStudent,
   type StudentEvaluation,
+  type StudentNameInput,
   type StudentType,
 } from "@/lib/students"
+import { toTitleCase } from "@/lib/utils"
 
 interface StudentsState {
   students: StudentType[]
 }
 
 interface StudentsActions {
-  addStudent: (name: string) => void
-  updateStudent: (id: string, name: string) => void
+  addStudent: (input: StudentNameInput) => void
+  updateStudent: (id: string, input: StudentNameInput) => void
   removeStudent: (id: string) => void
   saveEvaluation: (
     id: string,
@@ -44,15 +47,30 @@ const createStudentsStore = () =>
     persist(
       (set) => ({
         students: [],
-        addStudent: (name) =>
+        addStudent: (input) =>
           set((state) => ({
-            students: [...state.students, createStudent(name)],
+            students: [...state.students, createStudent(input)],
           })),
-        updateStudent: (id, name) =>
+        updateStudent: (id, input) =>
           set((state) => ({
-            students: state.students.map((student) =>
-              student.id === id ? { ...student, name } : student
-            ),
+            students: state.students.map((student) => {
+              if (student.id !== id) return student
+              const paternalSurname = toTitleCase(input.paternalSurname.trim())
+              const maternalSurname = toTitleCase(input.maternalSurname.trim())
+              const firstNames = toTitleCase(input.firstNames.trim())
+              const displayName = buildDisplayName({
+                paternalSurname,
+                maternalSurname,
+                firstNames,
+              })
+              return {
+                ...student,
+                paternalSurname,
+                maternalSurname,
+                firstNames,
+                displayName,
+              }
+            }),
           })),
         removeStudent: (id) =>
           set((state) => ({
@@ -105,7 +123,7 @@ const createStudentsStore = () =>
       {
         name: "pinax-students",
         storage: createJSONStorage(() => localStorage),
-        version: 1,
+        version: 2,
         migrate: (persistedState) => {
           const state = persistedState as Record<string, unknown> | undefined
           if (!state) return state as never
@@ -115,10 +133,84 @@ const createStudentsStore = () =>
             ...state,
             students: students.map((student) => {
               const item = student as Record<string, unknown>
-              if (!("unitGrades" in item) || typeof item["unitGrades"] !== "object" || item["unitGrades"] === null) {
-                return { ...item, unitGrades: {} }
+              let next: Record<string, unknown> = { ...item }
+              if (
+                !("unitGrades" in next) ||
+                typeof next["unitGrades"] !== "object" ||
+                next["unitGrades"] === null
+              ) {
+                next = { ...next, unitGrades: {} }
               }
-              return item
+              const hasParts =
+                typeof next["paternalSurname"] === "string" &&
+                typeof next["maternalSurname"] === "string" &&
+                typeof next["firstNames"] === "string" &&
+                typeof next["displayName"] === "string"
+              if (hasParts) {
+                const paternalSurname = toTitleCase(
+                  String(next["paternalSurname"]).trim()
+                )
+                const maternalSurname = toTitleCase(
+                  String(next["maternalSurname"]).trim()
+                )
+                const firstNames = toTitleCase(
+                  String(next["firstNames"]).trim()
+                )
+                const displayName = buildDisplayName({
+                  paternalSurname,
+                  maternalSurname,
+                  firstNames,
+                })
+                next = {
+                  ...next,
+                  paternalSurname,
+                  maternalSurname,
+                  firstNames,
+                  displayName,
+                }
+              } else {
+                const legacyName =
+                  typeof next["name"] === "string" ? String(next["name"]) : ""
+                const tokens = legacyName
+                  .trim()
+                  .split(/\s+/)
+                  .filter(Boolean)
+                let paternalSurname = ""
+                let maternalSurname = ""
+                let firstNames = ""
+                if (tokens.length >= 3) {
+                  paternalSurname = tokens[0] ?? ""
+                  maternalSurname = tokens[1] ?? ""
+                  firstNames = tokens.slice(2).join(" ")
+                } else if (tokens.length === 2) {
+                  paternalSurname = tokens[0] ?? ""
+                  maternalSurname = ""
+                  firstNames = tokens[1] ?? ""
+                } else if (tokens.length === 1) {
+                  paternalSurname = tokens[0] ?? ""
+                }
+                paternalSurname = paternalSurname
+                  ? toTitleCase(paternalSurname)
+                  : ""
+                maternalSurname = maternalSurname
+                  ? toTitleCase(maternalSurname)
+                  : ""
+                firstNames = firstNames ? toTitleCase(firstNames) : ""
+                const displayName = buildDisplayName({
+                  paternalSurname,
+                  maternalSurname,
+                  firstNames,
+                })
+                next = {
+                  ...next,
+                  paternalSurname,
+                  maternalSurname,
+                  firstNames,
+                  displayName,
+                }
+              }
+              delete next["name"]
+              return next
             }),
           } as never
         },

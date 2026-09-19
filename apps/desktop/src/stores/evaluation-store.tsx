@@ -25,10 +25,12 @@ interface EvaluationActions {
   addAssignment: (assignment: Assignment) => void
   updateAssignment: (index: number, assignment: Assignment) => void
   removeAssignment: (index: number) => void
+  removeAllAssignments: () => void
   setAssignmentsPercentageCriteria: (criteria: CriteriaType) => void
   addOtherCriteria: (criteria: CriteriaType) => void
   updateOtherCriteria: (index: number, criteria: CriteriaType) => void
   removeOtherCriteria: (index: number) => void
+  resetEvaluationCriteria: () => void
   updateUnitCriteria: (index: number, unitCriteria: CriteriaType) => void
 }
 
@@ -70,6 +72,14 @@ const createEvaluationStore = () =>
               },
             }
           }),
+        removeAllAssignments: () =>
+          set((state) => ({
+            assignments: [],
+            assignmentsQuantityCriteria: {
+              ...state.assignmentsQuantityCriteria,
+              value: 0,
+            },
+          })),
         setAssignmentsPercentageCriteria: (criteria) =>
           set({ assignmentsPercentageCriteria: criteria }),
         addOtherCriteria: (criteria) =>
@@ -88,6 +98,13 @@ const createEvaluationStore = () =>
               (_, itemIndex) => itemIndex !== index
             ),
           })),
+        resetEvaluationCriteria: () =>
+          set({
+            assignmentsPercentageCriteria: {
+              ...DEFAULT_ASSIGNMENTS_PERCENTAGE_CRITERIA,
+            },
+            otherCriteria: [...DEFAULT_OTHER_CRITERIA],
+          }),
         updateUnitCriteria: (index, unitCriteria) =>
           set((state) => ({
             unitCriteria: state.unitCriteria.map((item, itemIndex) =>
