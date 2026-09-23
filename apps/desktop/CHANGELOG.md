@@ -1,5 +1,23 @@
 # @pinax/desktop
 
+## 1.0.0
+
+### Major Changes
+
+- [#32](https://github.com/fortisuno/pinax/pull/32) [`b514e18`](https://github.com/fortisuno/pinax/commit/b514e188361ae80c4af0a6bcc30bd0ac3a1bd568) Thanks [@fortisuno](https://github.com/fortisuno)! - Agrega metadatos de grupo editables al reporte: ciclo escolar, grado, grupo y periodo con valores por defecto (año dinámico, 6°, A, Primer Trimestre). Incluye diálogo "Editar grupo" con selectores de año/grado/grupo y campo de periodo, estado persistido en el store (migración a v3). Simplifica el pie del PDF individual y grupal a la línea del reporte (`Ciclo Escolar X-Y · Grado Grupo · Periodo`) más el número de página.
+
+### Minor Changes
+
+- [#31](https://github.com/fortisuno/pinax/pull/31) [`281f2c9`](https://github.com/fortisuno/pinax/commit/281f2c94729ea2b96b8aa1910e107cc86c03d531) Thanks [@fortisuno](https://github.com/fortisuno)! - Reemplaza la cantidad numérica de tareas por una lista de tareas con descripción. Agrega el diálogo Gestionar tareas, muestra la descripción con tooltip al calificar y la incluye en el PDF exportado.
+
+- [#32](https://github.com/fortisuno/pinax/pull/32) [`eef7d78`](https://github.com/fortisuno/pinax/commit/eef7d785aea2a9f91dde4d3c66ce1f1e7a1b2f1c) Thanks [@fortisuno](https://github.com/fortisuno)! - Agrega Unidades de aprendizaje: 4 unidades estáticas con examen al 30% sobre la calificación base al 70%. Incluye sección en sidebar solo renombrable, columnas por unidad en la tabla y resumen por unidad en el PDF individual y grupal.
+
+### Patch Changes
+
+- [#29](https://github.com/fortisuno/pinax/pull/29) [`004d069`](https://github.com/fortisuno/pinax/commit/004d0690c25415bf3ce6d5d5f5df8ba88b5fa6d2) Thanks [@fortisuno](https://github.com/fortisuno)! - Test prerelease
+
+- [#31](https://github.com/fortisuno/pinax/pull/31) [`281f2c9`](https://github.com/fortisuno/pinax/commit/281f2c94729ea2b96b8aa1910e107cc86c03d531) Thanks [@fortisuno](https://github.com/fortisuno)! - Corrige desborde en reporte PDF por alumno: pagina notas con muchas tareas/criterios, repite encabezado en continuaciones y numera pie global. Bloque final junto sin corte. Iguala espacios superior/inferior (±1mm, abajo ligeramente mayor) y recupera ~1 fila por página sin solapar el pie.
+
 ## 0.1.16
 
 ### Patch Changes
