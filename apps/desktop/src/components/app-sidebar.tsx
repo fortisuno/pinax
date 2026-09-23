@@ -21,6 +21,7 @@ import {
   CriteriaGroupLabel,
 } from "@/components/criteria/criteria-group"
 import { ManageAssignmentsDialog } from "@/components/criteria/manage-assignments-dialog"
+import { PonderacionAlert } from "@/components/criteria/ponderacion-alert"
 import { UpdateCriteriaDialog } from "@/components/criteria/update-criteria-dialog"
 import {
   AlertDialog,
@@ -35,6 +36,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -60,9 +62,9 @@ const OTHER_CRITERIA_DESCRIPTION =
 const ASSIGNMENTS_PERCENTAGE_TITLE = "Editar ponderación de tareas"
 const ASSIGNMENTS_PERCENTAGE_DESCRIPTION =
   "Modifica la ponderación que representan las tareas en la evaluación."
-const UNIT_CRITERIA_TITLE = "Editar unidad"
+const UNIT_CRITERIA_TITLE = "Editar campo formativo"
 const UNIT_CRITERIA_DESCRIPTION =
-  "Actualiza el nombre de esta unidad de aprendizaje."
+  "Actualiza el nombre de este campo formativo."
 const DELETE_OTHER_CRITERIA_TITLE = "Borrar criterio"
 const DELETE_OTHER_CRITERIA_DESCRIPTION =
   "¿Estás seguro de que quieres borrar este criterio? Esta acción no se puede deshacer."
@@ -128,6 +130,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     setResetCriteriaDialogOpen(false)
   }, [resetEvaluationCriteria])
 
+  const totalPercentage = React.useMemo(() => {
+    const otherCriteriaTotal = otherCriteria.reduce(
+      (sum, criteria) => sum + criteria.value,
+      0
+    )
+    return assignmentsPercentageCriteria.value + otherCriteriaTotal
+  }, [assignmentsPercentageCriteria.value, otherCriteria])
+
   const editingDialog = renderEditingDialog({
     editingTarget,
     otherCriteria,
@@ -156,7 +166,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <CriteriaGroup>
           <CriteriaGroupHeader>
-            <CriteriaGroupLabel>Unidades de aprendizaje</CriteriaGroupLabel>
+            <CriteriaGroupLabel>Campos Formativos</CriteriaGroupLabel>
           </CriteriaGroupHeader>
           <CriteriaGroupContent>
             {unitCriteria.map((criteria, index) => (
@@ -256,6 +266,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </CriteriaGroupContent>
         </CriteriaGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <PonderacionAlert totalPercentage={totalPercentage} />
+      </SidebarFooter>
       <AddOtherCriteriaDialog
         open={addCriteriaDialogOpen}
         onOpenChange={setAddCriteriaDialogOpen}

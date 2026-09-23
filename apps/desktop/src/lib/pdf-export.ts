@@ -2,9 +2,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
 import {
-  formatScore,
   getInitials,
-  type StudentEvaluation,
   type StudentType,
 } from "@/lib/students"
 import {
@@ -14,27 +12,21 @@ import {
   type Assignment,
   type CriteriaType,
 } from "@/lib/evaluation"
+import { toTitleCase } from "@/lib/utils"
 
 const PAGE_FORMAT = "letter" as const
 const PAGE_ORIENTATION = "portrait" as const
 const MARGIN_MM = 15
-const UNIT_INDENT_MM = 4
 
 const DASH = "—"
-const PASS_THRESHOLD = 6
 const TASKS_DELIVERED_LABEL = "Tareas Entregadas"
-const TASKS_LABEL = "Tareas"
+const TASKS_LABEL = "Calificación Tareas"
 const TASKS_WEIGHTED_LABEL = "Calificación Tareas"
 const BASE_GRADE_LABEL = "Calificación Base"
-const BASE_WEIGHTED_LABEL = "Calificación Base Ponderada"
+const BASE_WEIGHTED_LABEL = "Calificación Base P."
 const EXAM_LABEL = "Examen"
-const EXAM_WEIGHTED_LABEL = "Examen Ponderado"
+const EXAM_WEIGHTED_LABEL = "Examen P."
 const UNIT_FINAL_LABEL = "Calificación Final"
-const FINAL_GRADE_LABEL = "Calificación final"
-const STATUS_LABEL = "Estado"
-const PASS_TEXT = "Aprobado"
-const FAIL_TEXT = "Reprobado"
-const NOT_EVALUATED_TEXT = "Sin calificar"
 const FOOTER_TEXT = "Pinax"
 const LEGEND_TITLE = "Abreviaturas"
 
@@ -67,6 +59,14 @@ export function unitAbbreviation(index: number): string {
   return `U${index + 1}`
 }
 
+function sortStudentsByDisplayNameAsc(
+  students: StudentType[]
+): StudentType[] {
+  return [...students].sort((a, b) =>
+    a.displayName.localeCompare(b.displayName, "es")
+  )
+}
+
 export function buildSummaryTableData(
   students: StudentType[],
   ctx: ExportContext
@@ -76,7 +76,6 @@ export function buildSummaryTableData(
   unitCriteria.forEach(() => {
     head.push("E", "EP", "CF")
   })
-  head.push("Estado")
 
   const groupHead: ({ content: string; colSpan?: number } | string)[] | null =
     unitCriteria.length > 0
@@ -88,11 +87,11 @@ export function buildSummaryTableData(
             content: getInitials(unit.label),
             colSpan: 3,
           })),
-          "",
         ]
       : null
 
-  const body = students.map((student) => {
+  const orderedStudents = sortStudentsByDisplayNameAsc(students)
+  const body = orderedStudents.map((student) => {
     const evaluation = student.evaluation
     const row: string[] = [student.displayName]
     if (evaluation) {
@@ -116,12 +115,29 @@ export function buildSummaryTableData(
         row.push(DASH, DASH, DASH)
       }
     })
-    if (evaluation) {
-      row.push(evaluation.final >= PASS_THRESHOLD ? PASS_TEXT : FAIL_TEXT)
-    } else {
-      row.push(DASH)
-    }
     return row
+  })
+
+  // Promedio grupal por unidad: promedio de `Math.round(final)`,
+  // replica la lógica del footer de data-table (CFR).
+  const evaluated = orderedStudents.filter(
+    (student) =>
+      student.status === "evaluated" && student.evaluation !== null
+  )
+  const foot: string[] = ["Promedio Grupal", "", ""]
+  unitCriteria.forEach((_, index) => {
+    const key = unitGradeKey(index)
+    const finals = evaluated
+      .map((student) => student.evaluation?.units?.[key]?.final)
+      .filter((value): value is number => value !== undefined)
+    if (finals.length === 0) {
+      foot.push("", "", DASH)
+      return
+    }
+    const rounded = finals.map((value) => Math.round(value))
+    const average =
+      rounded.reduce((sum, value) => sum + value, 0) / rounded.length
+    foot.push("", "", formatScoreOrDash(average))
   })
 
   const legend: { abbreviation: string; meaning: string }[] = [
@@ -146,19 +162,21 @@ export function buildSummaryTableData(
     { abbreviation: "CF", meaning: UNIT_FINAL_LABEL }
   )
 
-  return { head, body, legend, groupHead }
+  return { head, body, foot, legend, groupHead }
 }
 
 function formatScoreOrDash(value: number | undefined): string {
   if (value === undefined || Number.isNaN(value)) {
     return DASH
   }
-  return formatScore(value)
+  // Dos decimales solo para el PDF; la UI sigue usando `formatScore`.
+  return value.toFixed(2)
 }
 
-function statusLabelFor(evaluation: StudentEvaluation | null): string {
-  if (!evaluation) return NOT_EVALUATED_TEXT
-  return evaluation.final >= PASS_THRESHOLD ? PASS_TEXT : FAIL_TEXT
+function toUnitTitleCase(label: string): string {
+  // Normaliza a minúsculas en español y reutiliza `toTitleCase`
+  // para respetar artículos y conjunciones.
+  return toTitleCase(label.toLocaleLowerCase("es-MX"))
 }
 
 function drawNoteHeader(doc: jsPDF, studentName: string): number {
@@ -252,47 +270,28 @@ function drawNotePage(
     cursorY += NOTE_LINE_HEIGHT
   }
 
-  const drawSeparatorLine = () => {
-    cursorY = ensureNoteSpace(doc, cursorY, 4, student.displayName)
-    cursorY += 2
+  const drawDividerLine = () => {
+    // Compensa arrastre previo de labelValueRow (NOTE_LINE_HEIGHT):
+    // sin esto arriba queda 6+4=10 vs 4 abajo.
+    // Abajo usa +6 (vs +4 arriba) para compensar baseline de jsPDF:
+    // el texto dibuja en baseline, el ascenso (~2.5mm en 10pt)
+    // come aire visual bajo la línea; +6 equilibra blanco arriba/abajo.
+    cursorY -= NOTE_LINE_HEIGHT
+    cursorY = ensureNoteSpace(doc, cursorY, 10, student.displayName)
+    cursorY += 4
     doc.setDrawColor(...MUTED_COLOR)
     doc.setLineWidth(0.2)
     doc.line(MARGIN_MM, cursorY, pageWidth - MARGIN_MM, cursorY)
-    cursorY += 4
-  }
-
-  const drawUnitDivider = () => {
-    cursorY = ensureNoteSpace(doc, cursorY, 4, student.displayName)
-    cursorY += 1
-    doc.setDrawColor(...DESCRIPTION_COLOR)
-    doc.setLineWidth(0.1)
-    doc.line(
-      MARGIN_MM + UNIT_INDENT_MM,
-      cursorY,
-      pageWidth - MARGIN_MM,
-      cursorY
-    )
-    cursorY += 4
-  }
-
-  const labelValueRowAtomic = (rows: { label: string; value: string }[]) => {
-    cursorY = ensureNoteSpace(
-      doc,
-      cursorY,
-      rows.length * NOTE_LINE_HEIGHT,
-      student.displayName
-    )
-    for (const row of rows) {
-      doc.setFont("helvetica", "bold")
-      doc.setFontSize(NOTE_LABEL_SIZE)
-      doc.setTextColor(...PRIMARY_COLOR)
-      doc.text(row.label, MARGIN_MM, cursorY)
-      doc.text(row.value, pageWidth - MARGIN_MM, cursorY, { align: "right" })
-      cursorY += NOTE_LINE_HEIGHT
-    }
+    cursorY += 6
   }
 
   const evaluation = student.evaluation
+
+  labelValueRow(
+    TASKS_DELIVERED_LABEL,
+    evaluation ? String(evaluation.tasksDelivered) : DASH,
+    { emphasize: true }
+  )
 
   for (let i = 0; i < ctx.assignments.length; i += 1) {
     cursorY = ensureNoteSpace(doc, cursorY, NOTE_LINE_HEIGHT, student.displayName)
@@ -315,7 +314,8 @@ function drawNotePage(
       if (maxDescWidth > 10) {
         doc.setFont("helvetica", "italic")
         doc.setTextColor(...DESCRIPTION_COLOR)
-        const lines = doc.splitTextToSize(description, maxDescWidth)
+        const wrapped = `(${description})`
+        const lines = doc.splitTextToSize(wrapped, maxDescWidth)
         let firstLine: string = Array.isArray(lines)
           ? (lines[0] ?? "")
           : String(lines)
@@ -324,13 +324,16 @@ function drawNotePage(
           (lines.length > 1 || doc.getTextWidth(firstLine) > maxDescWidth)
         ) {
           const ellipsis = "…"
+          let base = firstLine.endsWith(")")
+            ? firstLine.slice(0, -1)
+            : firstLine
           while (
-            firstLine.length > 0 &&
-            doc.getTextWidth(firstLine + ellipsis) > maxDescWidth
+            base.length > 1 &&
+            doc.getTextWidth(`${base}${ellipsis})`) > maxDescWidth
           ) {
-            firstLine = firstLine.slice(0, -1)
+            base = base.slice(0, -1)
           }
-          firstLine = `${firstLine.trimEnd()}${ellipsis}`
+          firstLine = `${base.trimEnd()}${ellipsis})`
         }
         doc.text(firstLine, MARGIN_MM + labelWidth, cursorY)
       }
@@ -344,14 +347,9 @@ function drawNotePage(
     cursorY += NOTE_LINE_HEIGHT
   }
 
-  cursorY += 2
-
   if (evaluation) {
     const base = evaluation.base ?? evaluation.final
     const baseWeighted = evaluation.baseWeighted ?? 0
-    labelValueRow(TASKS_DELIVERED_LABEL, String(evaluation.tasksDelivered), {
-      emphasize: true,
-    })
     labelValueRow(TASKS_LABEL, formatScoreOrDash(evaluation.tasksAverage))
     labelValueRow(
       `${TASKS_WEIGHTED_LABEL} P. (${ctx.assignmentsPercentage}%)`,
@@ -375,32 +373,22 @@ function drawNotePage(
       formatScoreOrDash(baseWeighted),
       { emphasize: true }
     )
-    drawSeparatorLine()
+    drawDividerLine()
     unitCriteria.forEach((unit, index) => {
       const unitResult = evaluation.units?.[unitGradeKey(index)]
-      labelValueRow(unit.label.toUpperCase(), "", { emphasize: true })
-      labelValueRow(EXAM_LABEL, formatScoreOrDash(unitResult?.exam), {
-        indentX: UNIT_INDENT_MM,
-      })
+      labelValueRow(toUnitTitleCase(unit.label), "", { emphasize: true })
+      labelValueRow(EXAM_LABEL, formatScoreOrDash(unitResult?.exam))
       labelValueRow(
-        `${EXAM_WEIGHTED_LABEL} P. (${UNIT_EXAM_WEIGHT}%)`,
+        `${EXAM_WEIGHTED_LABEL} (${UNIT_EXAM_WEIGHT}%)`,
         formatScoreOrDash(unitResult?.examWeighted),
-        { emphasize: true, indentX: UNIT_INDENT_MM }
+        { emphasize: true }
       )
-      labelValueRow(
-        UNIT_FINAL_LABEL,
-        formatScoreOrDash(unitResult?.final),
-        { emphasize: true, indentX: UNIT_INDENT_MM }
-      )
-      if (index < unitCriteria.length - 1) drawUnitDivider()
+      labelValueRow(UNIT_FINAL_LABEL, formatScoreOrDash(unitResult?.final), {
+        emphasize: true,
+      })
+      if (index < unitCriteria.length - 1) drawDividerLine()
     })
-    cursorY += 2
-    labelValueRowAtomic([
-      { label: FINAL_GRADE_LABEL, value: formatScoreOrDash(evaluation.final) },
-      { label: STATUS_LABEL, value: statusLabelFor(evaluation) },
-    ])
   } else {
-    labelValueRow(TASKS_DELIVERED_LABEL, DASH, { emphasize: true })
     labelValueRow(TASKS_LABEL, DASH)
     labelValueRow(
       `${TASKS_WEIGHTED_LABEL} P. (${ctx.assignmentsPercentage}%)`,
@@ -419,26 +407,18 @@ function drawNotePage(
     labelValueRow(`${BASE_WEIGHTED_LABEL} (${UNIT_BASE_WEIGHT}%)`, DASH, {
       emphasize: true,
     })
-    drawSeparatorLine()
+    drawDividerLine()
     unitCriteria.forEach((unit, index) => {
-      labelValueRow(unit.label.toUpperCase(), "", { emphasize: true })
-      labelValueRow(EXAM_LABEL, DASH, { indentX: UNIT_INDENT_MM })
-      labelValueRow(
-        `${EXAM_WEIGHTED_LABEL} P. (${UNIT_EXAM_WEIGHT}%)`,
-        DASH,
-        { emphasize: true, indentX: UNIT_INDENT_MM }
-      )
+      labelValueRow(toUnitTitleCase(unit.label), "", { emphasize: true })
+      labelValueRow(EXAM_LABEL, DASH)
+      labelValueRow(`${EXAM_WEIGHTED_LABEL} (${UNIT_EXAM_WEIGHT}%)`, DASH, {
+        emphasize: true,
+      })
       labelValueRow(UNIT_FINAL_LABEL, DASH, {
         emphasize: true,
-        indentX: UNIT_INDENT_MM,
       })
-      if (index < unitCriteria.length - 1) drawUnitDivider()
+      if (index < unitCriteria.length - 1) drawDividerLine()
     })
-    cursorY += 2
-    labelValueRowAtomic([
-      { label: FINAL_GRADE_LABEL, value: DASH },
-      { label: STATUS_LABEL, value: statusLabelFor(evaluation) },
-    ])
   }
 }
 
@@ -448,7 +428,7 @@ function drawSummaryPage(
   ctx: ExportContext,
   dateStr: string
 ): void {
-  const { head, body, legend, groupHead } = buildSummaryTableData(
+  const { head, body, foot, legend, groupHead } = buildSummaryTableData(
     students,
     ctx
   )
@@ -485,6 +465,7 @@ function drawSummaryPage(
     startY: MARGIN_MM + 14,
     head: groupHead ? [groupHead, head] : [head],
     body,
+    foot: [foot],
     theme: "grid",
     styles: {
       font: "helvetica",
@@ -504,6 +485,12 @@ function drawSummaryPage(
     bodyStyles: {
       halign: "center",
       valign: "middle",
+    },
+    footStyles: {
+      fillColor: [241, 245, 249],
+      textColor: PRIMARY_COLOR,
+      fontStyle: "bold",
+      halign: "center",
     },
     columnStyles: {
       0: { halign: "left", fontStyle: "bold" },
@@ -573,8 +560,9 @@ export function exportGroupReport(
     orientation: PAGE_ORIENTATION,
   })
   const dateStr = currentDateStr()
-  drawSummaryPage(doc, students, ctx, dateStr)
-  for (const student of students) {
+  const orderedStudents = sortStudentsByDisplayNameAsc(students)
+  drawSummaryPage(doc, orderedStudents, ctx, dateStr)
+  for (const student of orderedStudents) {
     doc.addPage()
     drawNotePage(doc, student, ctx)
   }

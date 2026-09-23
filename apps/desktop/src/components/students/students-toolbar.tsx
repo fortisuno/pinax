@@ -1,6 +1,7 @@
 import * as React from "react"
 import {
   DownloadIcon,
+  EditIcon,
   MoreHorizontalIcon,
   PlusIcon,
   RotateCcwIcon,
@@ -28,10 +29,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PonderacionAlert } from "@/components/criteria/ponderacion-alert"
 import { exportAndSaveGroupReport } from "@/lib/pdf-export"
 import { useEvaluationStore } from "@/stores/evaluation-store"
 import { useStudentsStore } from "@/stores/students-store"
+import { Item, ItemContent, ItemTitle, ItemDescription } from "../ui/item"
+import { Separator } from "../ui/separator"
 
 type DeleteAction = "grades" | "table" | null
 
@@ -41,6 +43,49 @@ const DELETE_GRADES_DESCRIPTION =
 const DELETE_TABLE_TITLE = "Limpiar tabla"
 const DELETE_TABLE_DESCRIPTION =
   "¿Estás seguro de que quieres limpiar la tabla? Se eliminarán todos los alumnos registrados. Esta acción no se puede deshacer."
+
+function GroupMetadata() {
+  return (
+    <div className="flex items-center gap-1 lg:gap-4">
+      <Item variant="default" className="w-auto">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Ciclo Escolar</ItemTitle>
+          <ItemDescription>2023-2024</ItemDescription>
+        </ItemContent>
+      </Item>
+      <Separator
+        orientation="vertical"
+        className="mx-2 h-4 data-vertical:self-auto"
+      />
+      <Item variant="default" className="w-auto">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Grado</ItemTitle>
+          <ItemDescription>6°</ItemDescription>
+        </ItemContent>
+      </Item>
+      <Separator
+        orientation="vertical"
+        className="mx-2 h-4 data-vertical:self-auto"
+      />
+      <Item variant="default" className="w-auto">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Grupo</ItemTitle>
+          <ItemDescription>A</ItemDescription>
+        </ItemContent>
+      </Item>
+      <Separator
+        orientation="vertical"
+        className="mx-2 h-4 data-vertical:self-auto"
+      />
+      <Item variant="default" className="w-auto">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Periodo</ItemTitle>
+          <ItemDescription>Primer trimestre</ItemDescription>
+        </ItemContent>
+      </Item>
+    </div>
+  )
+}
 
 export function StudentsToolbar() {
   const clearEvaluations = useStudentsStore(
@@ -65,14 +110,6 @@ export function StudentsToolbar() {
       students.length > 0 && students.every((s) => s.status === "evaluated"),
     [students]
   )
-
-  const totalPercentage = React.useMemo(() => {
-    const otherCriteriaTotal = otherCriteria.reduce(
-      (sum, criteria) => sum + criteria.value,
-      0
-    )
-    return assignmentsPercentageCriteria.value + otherCriteriaTotal
-  }, [assignmentsPercentageCriteria.value, otherCriteria])
 
   const confirmDelete = React.useCallback(() => {
     if (deleteAction === "grades") {
@@ -123,7 +160,7 @@ export function StudentsToolbar() {
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <PonderacionAlert totalPercentage={totalPercentage} />
+      <GroupMetadata />
       <ButtonGroup>
         <Button variant="outline" size="lg" onClick={() => setAddStudentDialogOpen(true)}>
           <PlusIcon data-icon="inline-start" />
@@ -142,7 +179,11 @@ export function StudentsToolbar() {
               disabled={isExporting || !allStudentsEvaluated}
             >
               <DownloadIcon />
-              <span>Exportar</span>
+              <span>Exportar reporte</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <EditIcon />
+              <span>Editar grupo</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -150,14 +191,14 @@ export function StudentsToolbar() {
               onClick={() => setDeleteAction("grades")}
             >
               <RotateCcwIcon />
-              <span>Reiniciar</span>
+              <span>Reiniciar evaluación</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => setDeleteAction("table")}
             >
               <TrashIcon />
-              <span>Limpiar</span>
+              <span>Limpiar tabla</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

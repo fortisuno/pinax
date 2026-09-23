@@ -14,6 +14,22 @@ repo: verification is `pnpm lint` + typecheck/build.
 - shadcn CLI must run **inside** `apps/desktop`: `pnpm exec shadcn add <component>` (it''s a workspace dependency there, not in root).
 - Root workflow: install → lint → dist/build. CI forces `pnpm install --frozen-lockfile` and Node 24.
 
+## Desktop Style (`apps/desktop`)
+
+- Languages: TypeScript `^5.2.2` (target ES2020), JavaScript ES2020, HTML5, CSS3 via Tailwind CSS `^4.3.3`.
+- Package manager: pnpm `11.22.0` (workspace root) + Node 24.
+- Frameworks: React `^19.2.8`, Electron `^30.0.1`, Vite `^5.1.6` + `vite-plugin-electron ^0.28.6` (electron-vite), shadcn `^4.19.0`.
+- Libraries: state `zustand ^5.0.15`, validation `zod ^4.4.3`, forms/tables `@tanstack/react-form ^1.33.5` + `@tanstack/react-table ^9.1.2`, PDF `jspdf ^4.2.1` + `jspdf-autotable ^5.0.8`, charts `recharts 3.8.0`, UI `tailwindcss ^4.3.3` + `lucide-react ^1.34.0` + `sonner ^2.0.8` + `next-themes ^0.4.6`.
+- Code in English, UI text in Spanish.
+
+## Landing Style (`apps/landing`)
+
+- Languages: TypeScript `^5.6.3` (Astro strict), JavaScript ESNext, HTML5, CSS3 via Tailwind CSS `^4.3.3`.
+- Package manager: pnpm `11.22.0` (workspace root) + Node 24.
+- Frameworks: Astro `^7.3.1`, `@tailwindcss/vite ^4.3.3`.
+- Libraries: styling `tailwindcss ^4.3.3`, tooling `@astrojs/check ^0.9.4` (no extra runtime libs).
+- Code in English, UI text in Spanish.
+
 ## Changesets & versioning
 
 - Every feature/fix PR **must** include ≥1 `.changeset/*.md`; enforced by a required status check (`changeset-required`). Docs-only PRs use `pnpm changeset add --empty`. Exemption for the release PR is handled in-workflow, don''t remove it.

@@ -236,7 +236,7 @@ function EvaluateStudentForm({
           </FieldSet>
         ) : null}
         <FieldSet>
-          <FieldLegend>Unidades de aprendizaje</FieldLegend>
+          <FieldLegend>Campos Formativos</FieldLegend>
           <div className="grid grid-cols-1 gap-3">
             {unitCriteria.map((unit, index, array) => (
               <React.Fragment key={unitGradeKey(index)}>
