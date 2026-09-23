@@ -1,5 +1,4 @@
 import { useSelector, useForm } from "@tanstack/react-form"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,13 +17,11 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { studentNameSchema } from "@/lib/students"
+import { studentNamePartsSchema } from "@/lib/students"
 import { toTitleCase } from "@/lib/utils"
 import { useStudentsStore } from "@/stores/students-store"
 
-const addStudentSchema = z.object({
-  name: studentNameSchema,
-})
+const addStudentSchema = studentNamePartsSchema
 
 interface AddStudentDialogProps {
   open: boolean
@@ -55,14 +52,20 @@ function AddStudentForm({ onSubmitted }: { onSubmitted: () => void }) {
 
   const form = useForm({
     defaultValues: {
-      name: "",
+      paternalSurname: "",
+      maternalSurname: "",
+      firstNames: "",
     },
     validators: {
       onChange: addStudentSchema,
     },
     onSubmit: ({ value }) => {
-      const student = addStudentSchema.parse(value)
-      addStudent(toTitleCase(student.name))
+      const parsed = addStudentSchema.parse(value)
+      addStudent({
+        paternalSurname: toTitleCase(parsed.paternalSurname),
+        maternalSurname: toTitleCase(parsed.maternalSurname),
+        firstNames: toTitleCase(parsed.firstNames),
+      })
       onSubmitted()
     },
   })
@@ -79,18 +82,62 @@ function AddStudentForm({ onSubmitted }: { onSubmitted: () => void }) {
       }}
     >
       <FieldGroup>
-        <form.Field name="name">
+        <form.Field name="paternalSurname">
           {(field) => {
             const invalid =
               field.state.meta.isTouched && !field.state.meta.isValid
             return (
               <Field data-invalid={invalid || undefined}>
-                <FieldLabel htmlFor={field.name}>Nombre</FieldLabel>
+                <FieldLabel htmlFor={field.name}>Apellido Paterno</FieldLabel>
                 <Input
                   id={field.name}
                   name={field.name}
                   type="text"
-                  placeholder="Ej. López García Juan"
+                  placeholder="Ej. López"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-invalid={invalid || undefined}
+                />
+                <FieldError errors={field.state.meta.errors} />
+              </Field>
+            )
+          }}
+        </form.Field>
+        <form.Field name="maternalSurname">
+          {(field) => {
+            const invalid =
+              field.state.meta.isTouched && !field.state.meta.isValid
+            return (
+              <Field data-invalid={invalid || undefined}>
+                <FieldLabel htmlFor={field.name}>Apellido Materno</FieldLabel>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="text"
+                  placeholder="Ej. García"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-invalid={invalid || undefined}
+                />
+                <FieldError errors={field.state.meta.errors} />
+              </Field>
+            )
+          }}
+        </form.Field>
+        <form.Field name="firstNames">
+          {(field) => {
+            const invalid =
+              field.state.meta.isTouched && !field.state.meta.isValid
+            return (
+              <Field data-invalid={invalid || undefined}>
+                <FieldLabel htmlFor={field.name}>Nombres</FieldLabel>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="text"
+                  placeholder="Ej. Juan Carlos"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   onBlur={field.handleBlur}

@@ -1,6 +1,7 @@
 import * as React from "react"
 import {
   DownloadIcon,
+  EditIcon,
   MoreHorizontalIcon,
   PlusIcon,
   RotateCcwIcon,
@@ -9,6 +10,7 @@ import {
 import { toast } from "sonner"
 
 import { AddStudentDialog } from "@/components/students/add-student-dialog"
+import { UpdateStudentReportDialog } from "@/components/students/update-student-report-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import {
@@ -29,11 +30,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
-import { formatScore } from "@/lib/students"
 import { exportAndSaveGroupReport } from "@/lib/pdf-export"
 import { useEvaluationStore } from "@/stores/evaluation-store"
 import { useStudentsStore } from "@/stores/students-store"
+import { Item, ItemContent, ItemTitle, ItemDescription } from "../ui/item"
+import { Separator } from "../ui/separator"
 
 type DeleteAction = "grades" | "table" | null
 
@@ -44,38 +45,53 @@ const DELETE_TABLE_TITLE = "Limpiar tabla"
 const DELETE_TABLE_DESCRIPTION =
   "¿Estás seguro de que quieres limpiar la tabla? Se eliminarán todos los alumnos registrados. Esta acción no se puede deshacer."
 
-function GroupAverageBadge() {
-  const students = useStudentsStore((state) => state.students)
-
-  const average = React.useMemo(() => {
-    if (students.length === 0) return null
-    if (!students.every((student) => student.status === "evaluated")) return null
-    const sum = students.reduce(
-      (acc, student) => acc + (student.evaluation?.final ?? 0),
-      0
-    )
-    return sum / students.length
-  }, [students])
-
-  if (average === null) {
-    return (
-      <Badge variant="secondary" className="h-10 px-4 text-sm">
-        Promedio grupal:<span className="ml-2">—</span>
-      </Badge>
-    )
-  }
-
-  const colorClass =
-    average < 6
-      ? "bg-destructive/10 text-destructive dark:bg-destructive/20"
-      : average < 8
-        ? "bg-yellow-500/10 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"
-        : "bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400"
-
+function GroupMetadata() {
+  const report = useStudentsStore((state) => state.report)
   return (
-    <Badge className={cn("h-10 px-4 text-sm", colorClass)}>
-      Promedio grupal:<span className="ml-2">{formatScore(average)}</span>
-    </Badge>
+    <div className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-2 lg:gap-x-4">
+      <Item variant="default" className="w-auto min-w-0">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Ciclo Escolar</ItemTitle>
+          <ItemDescription className="whitespace-nowrap">{`${report.startYear}-${report.endYear}`}</ItemDescription>
+        </ItemContent>
+      </Item>
+      <Separator
+        orientation="vertical"
+        className="mx-2 h-4 data-vertical:self-auto"
+      />
+      <Item variant="default" className="w-auto min-w-0">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Grado</ItemTitle>
+          <ItemDescription className="whitespace-nowrap">
+            {report.grade}
+          </ItemDescription>
+        </ItemContent>
+      </Item>
+      <Separator
+        orientation="vertical"
+        className="mx-2 h-4 data-vertical:self-auto"
+      />
+      <Item variant="default" className="w-auto min-w-0">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Grupo</ItemTitle>
+          <ItemDescription className="whitespace-nowrap">
+            {report.group}
+          </ItemDescription>
+        </ItemContent>
+      </Item>
+      <Separator
+        orientation="vertical"
+        className="mx-2 h-4 data-vertical:self-auto"
+      />
+      <Item variant="default" className="w-auto min-w-0">
+        <ItemContent className="flex flex-row gap-3">
+          <ItemTitle>Periodo</ItemTitle>
+          <ItemDescription className="whitespace-nowrap">
+            {report.period}
+          </ItemDescription>
+        </ItemContent>
+      </Item>
+    </div>
   )
 }
 
@@ -86,6 +102,7 @@ export function StudentsToolbar() {
   const clearStudents = useStudentsStore((state) => state.clearStudents)
   const students = useStudentsStore((state) => state.students)
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
+  const unitCriteria = useEvaluationStore((state) => state.unitCriteria)
   const assignments = useEvaluationStore((state) => state.assignments)
   const assignmentsPercentageCriteria = useEvaluationStore(
     (state) => state.assignmentsPercentageCriteria
@@ -93,8 +110,10 @@ export function StudentsToolbar() {
 
   const [addStudentDialogOpen, setAddStudentDialogOpen] =
     React.useState(false)
+  const [editReportOpen, setEditReportOpen] = React.useState(false)
   const [deleteAction, setDeleteAction] = React.useState<DeleteAction>(null)
   const [isExporting, setIsExporting] = React.useState(false)
+  const report = useStudentsStore((state) => state.report)
 
   const allStudentsEvaluated = React.useMemo(
     () =>
@@ -124,8 +143,10 @@ export function StudentsToolbar() {
     try {
       const result = await exportAndSaveGroupReport(students, {
         otherCriteria,
+        unitCriteria,
         assignments,
         assignmentsPercentage: assignmentsPercentageCriteria.value,
+        report,
       })
       if (result.saved) {
         toast.success("Reporte grupal exportado")
@@ -143,13 +164,15 @@ export function StudentsToolbar() {
     students,
     allStudentsEvaluated,
     otherCriteria,
+    unitCriteria,
     assignments,
     assignmentsPercentageCriteria,
+    report,
   ])
 
   return (
-    <div className="flex items-center justify-between gap-2">
-      <GroupAverageBadge />
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+      <GroupMetadata />
       <ButtonGroup>
         <Button variant="outline" size="lg" onClick={() => setAddStudentDialogOpen(true)}>
           <PlusIcon data-icon="inline-start" />
@@ -168,7 +191,11 @@ export function StudentsToolbar() {
               disabled={isExporting || !allStudentsEvaluated}
             >
               <DownloadIcon />
-              <span>Exportar</span>
+              <span>Exportar reporte</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEditReportOpen(true)}>
+              <EditIcon />
+              <span>Editar grupo</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -176,14 +203,14 @@ export function StudentsToolbar() {
               onClick={() => setDeleteAction("grades")}
             >
               <RotateCcwIcon />
-              <span>Reiniciar</span>
+              <span>Reiniciar evaluación</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => setDeleteAction("table")}
             >
               <TrashIcon />
-              <span>Limpiar</span>
+              <span>Limpiar tabla</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -191,6 +218,10 @@ export function StudentsToolbar() {
       <AddStudentDialog
         open={addStudentDialogOpen}
         onOpenChange={setAddStudentDialogOpen}
+      />
+      <UpdateStudentReportDialog
+        open={editReportOpen}
+        onOpenChange={setEditReportOpen}
       />
       <AlertDialog
         open={deleteAction !== null}

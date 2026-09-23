@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { computeEvaluation } from "@/lib/students"
+import { computeEvaluation, type UnitResult } from "@/lib/students"
 import {
   EvaluationStoreContext,
   type EvaluationStoreApi,
@@ -24,8 +24,12 @@ function subscribeToEvaluationChanges(
   studentsStore: StudentsStoreApi
 ) {
   const reconcile = () => {
-    const { assignmentsQuantity, assignmentsPercentage, otherCriteria } =
-      readEvaluationSnapshot(evaluationStore)
+    const {
+      assignmentsQuantity,
+      assignmentsPercentage,
+      otherCriteria,
+      unitCriteria,
+    } = readEvaluationSnapshot(evaluationStore)
     const { students, replaceStudentEvaluation } = studentsStore.getState()
 
     for (const student of students) {
@@ -35,12 +39,15 @@ function subscribeToEvaluationChanges(
         student.assignmentGrades,
         assignmentsQuantity
       )
+      const unitGrades = student.unitGrades ?? {}
 
       const nextEvaluation = computeEvaluation({
         assignmentGrades,
         criteriaGrades: student.criteriaGrades,
+        unitGrades,
         assignmentsPercentage,
         otherCriteria,
+        unitCriteria,
       })
 
       const previous = student.evaluation
@@ -49,18 +56,22 @@ function subscribeToEvaluationChanges(
         previous.tasksAverage === nextEvaluation.tasksAverage &&
         previous.tasks === nextEvaluation.tasks &&
         previous.final === nextEvaluation.final &&
+        (previous.base ?? previous.final) === nextEvaluation.base &&
+        (previous.baseWeighted ?? 0) === nextEvaluation.baseWeighted &&
         previous.tasksDelivered === nextEvaluation.tasksDelivered &&
         areRecordsEqual(previous.criteria, nextEvaluation.criteria) &&
         areRecordsEqual(
           previous.weightedCriteria,
           nextEvaluation.weightedCriteria
-        )
+        ) &&
+        areUnitsEqual(previous.units ?? {}, nextEvaluation.units)
       ) {
         continue
       }
 
       replaceStudentEvaluation(student.id, {
         assignmentGrades,
+        unitGrades,
         evaluation: nextEvaluation,
       })
     }
@@ -71,12 +82,17 @@ function subscribeToEvaluationChanges(
 }
 
 function readEvaluationSnapshot(api: EvaluationStoreApi) {
-  const { assignments, assignmentsPercentageCriteria, otherCriteria } =
-    api.getState()
+  const {
+    assignments,
+    assignmentsPercentageCriteria,
+    otherCriteria,
+    unitCriteria,
+  } = api.getState()
   return {
     assignmentsQuantity: assignments.length,
     assignmentsPercentage: assignmentsPercentageCriteria.value,
     otherCriteria,
+    unitCriteria,
   }
 }
 
@@ -100,4 +116,21 @@ function areRecordsEqual(
     if ((a[key] ?? 0) !== (b[key] ?? 0)) return false
   }
   return true
+}
+
+function flattenUnits(units: Record<string, UnitResult>): Record<string, number> {
+  const flat: Record<string, number> = {}
+  for (const [key, result] of Object.entries(units)) {
+    flat[`${key}:exam`] = result.exam
+    flat[`${key}:examWeighted`] = result.examWeighted
+    flat[`${key}:final`] = result.final
+  }
+  return flat
+}
+
+function areUnitsEqual(
+  a: Record<string, UnitResult>,
+  b: Record<string, UnitResult>
+): boolean {
+  return areRecordsEqual(flattenUnits(a), flattenUnits(b))
 }

@@ -1,5 +1,4 @@
 import { useSelector, useForm } from "@tanstack/react-form"
-import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,12 +17,11 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { studentNameSchema, type StudentType } from "@/lib/students"
+import { studentNamePartsSchema, type StudentType } from "@/lib/students"
+import { toTitleCase } from "@/lib/utils"
 import { useStudentsStore } from "@/stores/students-store"
 
-const updateStudentSchema = z.object({
-  name: studentNameSchema,
-})
+const updateStudentSchema = studentNamePartsSchema
 
 interface UpdateStudentDialogProps {
   student: StudentType | null
@@ -39,7 +37,7 @@ export function UpdateStudentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar alumno</DialogTitle>
-          <DialogDescription>Actualiza el nombre del alumno.</DialogDescription>
+          <DialogDescription>Actualiza los datos del alumno.</DialogDescription>
         </DialogHeader>
         {student ? (
           <UpdateStudentForm
@@ -64,14 +62,20 @@ function UpdateStudentForm({
 
   const form = useForm({
     defaultValues: {
-      name: student.name,
+      paternalSurname: student.paternalSurname,
+      maternalSurname: student.maternalSurname,
+      firstNames: student.firstNames,
     },
     validators: {
       onChange: updateStudentSchema,
     },
     onSubmit: ({ value }) => {
       const parsed = updateStudentSchema.parse(value)
-      updateStudent(student.id, parsed.name)
+      updateStudent(student.id, {
+        paternalSurname: toTitleCase(parsed.paternalSurname),
+        maternalSurname: toTitleCase(parsed.maternalSurname),
+        firstNames: toTitleCase(parsed.firstNames),
+      })
       onSubmitted()
     },
   })
@@ -88,17 +92,62 @@ function UpdateStudentForm({
       }}
     >
       <FieldGroup>
-        <form.Field name="name">
+        <form.Field name="paternalSurname">
           {(field) => {
             const invalid =
               field.state.meta.isTouched && !field.state.meta.isValid
             return (
               <Field data-invalid={invalid || undefined}>
-                <FieldLabel htmlFor={field.name}>Nombre</FieldLabel>
+                <FieldLabel htmlFor={field.name}>Apellido Paterno</FieldLabel>
                 <Input
                   id={field.name}
                   name={field.name}
                   type="text"
+                  placeholder="Ej. López"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-invalid={invalid || undefined}
+                />
+                <FieldError errors={field.state.meta.errors} />
+              </Field>
+            )
+          }}
+        </form.Field>
+        <form.Field name="maternalSurname">
+          {(field) => {
+            const invalid =
+              field.state.meta.isTouched && !field.state.meta.isValid
+            return (
+              <Field data-invalid={invalid || undefined}>
+                <FieldLabel htmlFor={field.name}>Apellido Materno</FieldLabel>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="text"
+                  placeholder="Ej. García"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-invalid={invalid || undefined}
+                />
+                <FieldError errors={field.state.meta.errors} />
+              </Field>
+            )
+          }}
+        </form.Field>
+        <form.Field name="firstNames">
+          {(field) => {
+            const invalid =
+              field.state.meta.isTouched && !field.state.meta.isValid
+            return (
+              <Field data-invalid={invalid || undefined}>
+                <FieldLabel htmlFor={field.name}>Nombres</FieldLabel>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="text"
+                  placeholder="Ej. Juan Carlos"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   onBlur={field.handleBlur}
