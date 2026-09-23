@@ -1,5 +1,11 @@
 # @pinax/landing
 
+## 0.1.7
+
+### Patch Changes
+
+- [#33](https://github.com/fortisuno/pinax/pull/33) [`4dd85af`](https://github.com/fortisuno/pinax/commit/4dd85af2f15c298e6612ec8f48350e7f9944c029) Thanks [@fortisuno](https://github.com/fortisuno)! - chore: update version to 1.0.0 and adjust download URLs in DownloadCta and Hero components
+
 ## 0.1.6
 
 ### Patch Changes
