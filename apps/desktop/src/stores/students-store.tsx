@@ -5,20 +5,25 @@ import { createJSONStorage, persist } from "zustand/middleware"
 import {
   buildDisplayName,
   createStudent,
+  getDefaultStudentReport,
+  studentReportSchema,
   type StudentEvaluation,
   type StudentNameInput,
+  type StudentReport,
   type StudentType,
 } from "@/lib/students"
 import { toTitleCase } from "@/lib/utils"
 
 interface StudentsState {
   students: StudentType[]
+  report: StudentReport
 }
 
 interface StudentsActions {
   addStudent: (input: StudentNameInput) => void
   updateStudent: (id: string, input: StudentNameInput) => void
   removeStudent: (id: string) => void
+  updateReportMetadata: (report: StudentReport) => void
   saveEvaluation: (
     id: string,
     payload: {
@@ -42,11 +47,18 @@ interface StudentsActions {
 
 export type StudentsStore = StudentsState & StudentsActions
 
+function resolvePersistedReport(value: unknown): StudentReport {
+  const parsed = studentReportSchema.safeParse(value)
+  if (parsed.success) return parsed.data
+  return getDefaultStudentReport()
+}
+
 const createStudentsStore = () =>
   createStore<StudentsStore>()(
     persist(
       (set) => ({
         students: [],
+        report: getDefaultStudentReport(),
         addStudent: (input) =>
           set((state) => ({
             students: [...state.students, createStudent(input)],
@@ -119,18 +131,29 @@ const createStudentsStore = () =>
             })),
           })),
         clearStudents: () => set({ students: [] }),
+        updateReportMetadata: (report) =>
+          set(() => ({
+            report: { ...report },
+          })),
       }),
       {
         name: "pinax-students",
         storage: createJSONStorage(() => localStorage),
-        version: 2,
+        version: 3,
         migrate: (persistedState) => {
           const state = persistedState as Record<string, unknown> | undefined
           if (!state) return state as never
           const students = state["students"]
-          if (!Array.isArray(students)) return state as never
+          if (!Array.isArray(students)) {
+            return {
+              ...state,
+              students: [],
+              report: resolvePersistedReport(state["report"]),
+            } as never
+          }
           return {
             ...state,
+            report: resolvePersistedReport(state["report"]),
             students: students.map((student) => {
               const item = student as Record<string, unknown>
               let next: Record<string, unknown> = { ...item }
@@ -216,6 +239,7 @@ const createStudentsStore = () =>
         },
         partialize: (state) => ({
           students: state.students,
+          report: state.report,
         }),
       }
     )

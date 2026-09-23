@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner"
 
 import { AddStudentDialog } from "@/components/students/add-student-dialog"
+import { UpdateStudentReportDialog } from "@/components/students/update-student-report-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,42 +46,49 @@ const DELETE_TABLE_DESCRIPTION =
   "¿Estás seguro de que quieres limpiar la tabla? Se eliminarán todos los alumnos registrados. Esta acción no se puede deshacer."
 
 function GroupMetadata() {
+  const report = useStudentsStore((state) => state.report)
   return (
-    <div className="flex items-center gap-1 lg:gap-4">
-      <Item variant="default" className="w-auto">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-2 lg:gap-x-4">
+      <Item variant="default" className="w-auto min-w-0">
         <ItemContent className="flex flex-row gap-3">
           <ItemTitle>Ciclo Escolar</ItemTitle>
-          <ItemDescription>2023-2024</ItemDescription>
+          <ItemDescription className="whitespace-nowrap">{`${report.startYear}-${report.endYear}`}</ItemDescription>
         </ItemContent>
       </Item>
       <Separator
         orientation="vertical"
         className="mx-2 h-4 data-vertical:self-auto"
       />
-      <Item variant="default" className="w-auto">
+      <Item variant="default" className="w-auto min-w-0">
         <ItemContent className="flex flex-row gap-3">
           <ItemTitle>Grado</ItemTitle>
-          <ItemDescription>6°</ItemDescription>
+          <ItemDescription className="whitespace-nowrap">
+            {report.grade}
+          </ItemDescription>
         </ItemContent>
       </Item>
       <Separator
         orientation="vertical"
         className="mx-2 h-4 data-vertical:self-auto"
       />
-      <Item variant="default" className="w-auto">
+      <Item variant="default" className="w-auto min-w-0">
         <ItemContent className="flex flex-row gap-3">
           <ItemTitle>Grupo</ItemTitle>
-          <ItemDescription>A</ItemDescription>
+          <ItemDescription className="whitespace-nowrap">
+            {report.group}
+          </ItemDescription>
         </ItemContent>
       </Item>
       <Separator
         orientation="vertical"
         className="mx-2 h-4 data-vertical:self-auto"
       />
-      <Item variant="default" className="w-auto">
+      <Item variant="default" className="w-auto min-w-0">
         <ItemContent className="flex flex-row gap-3">
           <ItemTitle>Periodo</ItemTitle>
-          <ItemDescription>Primer trimestre</ItemDescription>
+          <ItemDescription className="whitespace-nowrap">
+            {report.period}
+          </ItemDescription>
         </ItemContent>
       </Item>
     </div>
@@ -102,8 +110,10 @@ export function StudentsToolbar() {
 
   const [addStudentDialogOpen, setAddStudentDialogOpen] =
     React.useState(false)
+  const [editReportOpen, setEditReportOpen] = React.useState(false)
   const [deleteAction, setDeleteAction] = React.useState<DeleteAction>(null)
   const [isExporting, setIsExporting] = React.useState(false)
+  const report = useStudentsStore((state) => state.report)
 
   const allStudentsEvaluated = React.useMemo(
     () =>
@@ -136,6 +146,7 @@ export function StudentsToolbar() {
         unitCriteria,
         assignments,
         assignmentsPercentage: assignmentsPercentageCriteria.value,
+        report,
       })
       if (result.saved) {
         toast.success("Reporte grupal exportado")
@@ -156,10 +167,11 @@ export function StudentsToolbar() {
     unitCriteria,
     assignments,
     assignmentsPercentageCriteria,
+    report,
   ])
 
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
       <GroupMetadata />
       <ButtonGroup>
         <Button variant="outline" size="lg" onClick={() => setAddStudentDialogOpen(true)}>
@@ -181,7 +193,7 @@ export function StudentsToolbar() {
               <DownloadIcon />
               <span>Exportar reporte</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEditReportOpen(true)}>
               <EditIcon />
               <span>Editar grupo</span>
             </DropdownMenuItem>
@@ -206,6 +218,10 @@ export function StudentsToolbar() {
       <AddStudentDialog
         open={addStudentDialogOpen}
         onOpenChange={setAddStudentDialogOpen}
+      />
+      <UpdateStudentReportDialog
+        open={editReportOpen}
+        onOpenChange={setEditReportOpen}
       />
       <AlertDialog
         open={deleteAction !== null}

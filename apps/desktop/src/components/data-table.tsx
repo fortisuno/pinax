@@ -189,23 +189,23 @@ function RowActions({
       <DropdownMenuContent align="end" className="w-auto min-w-fit">
         <DropdownMenuItem onClick={() => onEvaluate(student)}>
           <ClipboardCheckIcon />
-          <span>Calificar</span>
+          <span>Calificar Alumno</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onExport(student)}
           disabled={student.status !== "evaluated"}
         >
           <DownloadIcon />
-          <span>Exportar</span>
+          <span>Exportar Reporte</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onEdit(student)}>
           <PencilIcon />
-          <span>Editar</span>
+          <span>Editar Alumno</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={() => onDelete(student)}>
           <TrashIcon />
-          <span>Borrar</span>
+          <span>Borrar Alumno</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -343,6 +343,7 @@ function UnitGroupColumns({ unitCriteria }: { unitCriteria: CriteriaType[] }) {
 export function DataTable() {
   const students = useStudentsStore((state) => state.students)
   const removeStudent = useStudentsStore((state) => state.removeStudent)
+  const report = useStudentsStore((state) => state.report)
   const otherCriteria = useEvaluationStore((state) => state.otherCriteria)
   const unitCriteria = useEvaluationStore((state) => state.unitCriteria)
   const assignments = useEvaluationStore((state) => state.assignments)
@@ -405,6 +406,7 @@ export function DataTable() {
           unitCriteria,
           assignments,
           assignmentsPercentage: assignmentsPercentageCriteria.value,
+          report,
         })
         if (result.saved) {
           toast.success(`Reporte de ${student.displayName} exportado`)
@@ -422,6 +424,7 @@ export function DataTable() {
       unitCriteria,
       assignments,
       assignmentsPercentageCriteria,
+      report,
     ]
   )
 

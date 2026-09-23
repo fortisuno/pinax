@@ -2,7 +2,9 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
 import {
+  getDefaultStudentReport,
   getInitials,
+  type StudentReport,
   type StudentType,
 } from "@/lib/students"
 import {
@@ -27,7 +29,6 @@ const BASE_WEIGHTED_LABEL = "Calificación Base P."
 const EXAM_LABEL = "Examen"
 const EXAM_WEIGHTED_LABEL = "Examen P."
 const UNIT_FINAL_LABEL = "Calificación Final"
-const FOOTER_TEXT = "Pinax"
 const LEGEND_TITLE = "Abreviaturas"
 
 const PRIMARY_COLOR: [number, number, number] = [33, 37, 41]
@@ -48,6 +49,15 @@ export interface ExportContext {
   assignments: Assignment[]
   assignmentsPercentage: number
   unitCriteria: CriteriaType[]
+  report?: StudentReport
+}
+
+export function formatReportLine(report: StudentReport): string {
+  return `Ciclo Escolar ${report.startYear}-${report.endYear} · ${report.grade} ${report.group} · ${report.period}`
+}
+
+function resolveReport(ctx: ExportContext): StudentReport {
+  return ctx.report ?? getDefaultStudentReport()
 }
 
 export interface SavePdfResult {
@@ -195,7 +205,11 @@ function drawNoteHeader(doc: jsPDF, studentName: string): number {
   return headingBottom + 8
 }
 
-function drawNoteFooter(doc: jsPDF, pageNum: number, dateStr: string): void {
+function drawNoteFooter(
+  doc: jsPDF,
+  pageNum: number,
+  reportLine: string
+): void {
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const footerY = pageHeight - MARGIN_MM
@@ -206,7 +220,10 @@ function drawNoteFooter(doc: jsPDF, pageNum: number, dateStr: string): void {
   doc.setFont("helvetica", "normal")
   doc.setFontSize(NOTE_FOOTER_SIZE)
   doc.setTextColor(...MUTED_COLOR)
-  doc.text(`${FOOTER_TEXT} · Generado el ${dateStr}`, MARGIN_MM, footerY)
+  const leftText = reportLine
+  doc.text(leftText, MARGIN_MM, footerY, {
+    maxWidth: pageWidth - MARGIN_MM * 2 - 20,
+  })
   doc.text(`Pág. ${pageNum}`, pageWidth - MARGIN_MM, footerY, {
     align: "right",
   })
@@ -227,11 +244,14 @@ function ensureNoteSpace(
   return drawNoteHeader(doc, studentName)
 }
 
-function drawAllFooters(doc: jsPDF, dateStr: string): void {
+function drawAllFooters(
+  doc: jsPDF,
+  reportLine: string
+): void {
   const total = doc.getNumberOfPages()
   for (let i = 1; i <= total; i += 1) {
     doc.setPage(i)
-    drawNoteFooter(doc, i, dateStr)
+    drawNoteFooter(doc, i, reportLine)
   }
 }
 
@@ -432,6 +452,7 @@ function drawSummaryPage(
     students,
     ctx
   )
+  const reportLine = formatReportLine(resolveReport(ctx))
 
   doc.setFont("helvetica", "bold")
   doc.setFontSize(14)
@@ -442,7 +463,7 @@ function drawSummaryPage(
   doc.setFontSize(9)
   doc.setTextColor(...MUTED_COLOR)
   doc.text(
-    `Generado el ${dateStr} · ${students.length} alumno(s)`,
+    `Generado el ${dateStr} · ${students.length} alumno(s) · ${reportLine}`,
     MARGIN_MM,
     MARGIN_MM + 10
   )
@@ -544,9 +565,9 @@ export function exportStudentReport(
     format: PAGE_FORMAT,
     orientation: PAGE_ORIENTATION,
   })
-  const dateStr = currentDateStr()
+  const reportLine = formatReportLine(resolveReport(ctx))
   drawNotePage(doc, student, ctx)
-  drawAllFooters(doc, dateStr)
+  drawAllFooters(doc, reportLine)
   return new Blob([doc.output("arraybuffer")], { type: "application/pdf" })
 }
 
@@ -560,13 +581,14 @@ export function exportGroupReport(
     orientation: PAGE_ORIENTATION,
   })
   const dateStr = currentDateStr()
+  const reportLine = formatReportLine(resolveReport(ctx))
   const orderedStudents = sortStudentsByDisplayNameAsc(students)
   drawSummaryPage(doc, orderedStudents, ctx, dateStr)
   for (const student of orderedStudents) {
     doc.addPage()
     drawNotePage(doc, student, ctx)
   }
-  drawAllFooters(doc, dateStr)
+  drawAllFooters(doc, reportLine)
   return new Blob([doc.output("arraybuffer")], { type: "application/pdf" })
 }
 

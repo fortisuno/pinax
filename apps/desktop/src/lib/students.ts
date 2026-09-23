@@ -67,6 +67,62 @@ export const studentNamePartsSchema = z.object({
 
 export type StudentNameInput = z.infer<typeof studentNamePartsSchema>
 
+export const GRADE_OPTIONS = ["1°", "2°", "3°", "4°", "5°", "6°"] as const
+
+export const GROUP_OPTIONS = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+] as const
+
+const yearStringSchema = z
+  .string()
+  .regex(/^\d{4}$/, "Año inválido (formato YYYY)")
+
+export const studentReportSchema = z.object({
+  startYear: yearStringSchema,
+  endYear: yearStringSchema,
+  grade: z.enum(GRADE_OPTIONS, { error: "Grado inválido" }),
+  group: z.enum(GROUP_OPTIONS, { error: "Grupo inválido" }),
+  period: z.string().trim().min(1, "El periodo es obligatorio"),
+})
+
+export type StudentReport = z.infer<typeof studentReportSchema>
+
+export function getDefaultStudentReport(): StudentReport {
+  const currentYear = new Date().getFullYear()
+  return {
+    startYear: String(currentYear),
+    endYear: String(currentYear + 1),
+    grade: "6°",
+    group: "A",
+    period: "Primer Trimestre",
+  }
+}
+
 const gradeInputSchema = z
   .string()
   .transform((raw) => (raw.trim() === "" ? Number.NaN : Number(raw)))
